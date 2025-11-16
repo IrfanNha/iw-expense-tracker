@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  CASH
+  BANK
+  CARD
+  E_WALLET
+  OTHER
+}
+
+enum TxType {
+  INCOME
+  EXPENSE
+  TRANSFER_DEBIT     // uang keluar karena transfer
+  TRANSFER_CREDIT    // uang masuk karena transfer
+}
+
+/* ============================================================
+   USER
+============================================================ */
+
+model User {
+  id          String       @id @default(cuid())
+  name        String?
+  email       String?      @unique
+  hashedPin   String?      // untuk login PIN
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+  transfers     Transfer[]
+
+  @@index([email])
+}
+
+/* ============================================================
+   ACCOUNT
+============================================================ */
+
+model Account {
+  id          String        @id @default(cuid())
+  userId      String
+  name        String
+  type        AccountType   @default(CASH)
+  currency    String        @default("IDR")
+  icon        String?
+  balance     Int           @default(0) // integer-based for accuracy
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  outgoingTransfers Transfer[] @relation("TransferFrom")
+  incomingTransfers Transfer[] @relation("TransferTo")
+
+  @@index([userId])
+  @@index([type])
+}
+
+/* ============================================================
+   CATEGORY
+============================================================ */
+
+model Category {
+  id          String      @id @default(cuid())
+  userId      String
+  name        String
+  isIncome    Boolean     @default(false)
+  icon        String?
+  createdAt   DateTime    @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([isIncome])
+}
+
+/* ============================================================
+   TRANSACTION
+============================================================ */
+
+model Transaction {
+  id          String     @id @default(cuid())
+  userId      String
+  accountId   String
+  categoryId  String?
+  amount      Int         // always positive
+  type        TxType
+  note        String?
+  occurredAt  DateTime    @default(now())
+  transferId  String?
+  createdAt   DateTime    @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  transfer    Transfer?   @relation(fields: [transferId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([transferId])
+  @@index([type])
+  @@index([occurredAt])
+}
+
+/* ============================================================
+   TRANSFER
+============================================================ */
+
+model Transfer {
+  id            String      @id @default(cuid())
+  userId        String
+  fromAccountId String
+  toAccountId   String
+  amount        Int         // always positive
+  note          String?
+  createdAt     DateTime    @default(now())
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fromAccount   Account     @relation("TransferFrom", fields: [fromAccountId], references: [id])
+  toAccount     Account     @relation("TransferTo", fields: [toAccountId], references: [id])
+
+  transactions  Transaction[]
+
+  @@index([userId])
+  @@index([fromAccountId])
+  @@index([toAccountId])
+}
