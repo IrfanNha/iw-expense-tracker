@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validators";
@@ -5,12 +6,51 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
+    // Check if Turnstile should be disabled (development mode)
+    const isDevelopment = process.env.APP_ENV === "development" || 
+                          process.env.NODE_ENV === "development";
+
     const json = await req.json();
-    const parsed = registerSchema.safeParse(json);
+    const { turnstileToken, ...userData } = json;
+
+    // Verify Turnstile token only in production
+    if (!isDevelopment) {
+      if (!turnstileToken) {
+        return NextResponse.json(
+          { error: "Security verification is required" },
+          { status: 400 }
+        );
+      }
+
+      const secretKey = process.env.TURNSTILE_SECRET_KEY;
+      if (secretKey) {
+        const verifyRes = await fetch(
+          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              secret: secretKey,
+              response: turnstileToken,
+            }),
+          }
+        );
+
+        const verifyResult = await verifyRes.json();
+        if (!verifyResult.success) {
+          return NextResponse.json(
+            { error: "Security verification failed. Please try again." },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    const parsed = registerSchema.safeParse(userData);
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid input", details: parsed.error.errors },
+        { error: "Invalid input", details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -57,4 +97,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

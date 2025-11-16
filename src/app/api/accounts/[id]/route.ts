@@ -20,7 +20,7 @@ export async function PUT(
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid input", details: parsed.error.errors },
+        { error: "Invalid input", details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -41,6 +41,7 @@ export async function PUT(
     });
 
     return NextResponse.json({ account });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Update account error:", error);
     return NextResponse.json(
@@ -91,6 +92,7 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Delete account error:", error);
     return NextResponse.json(
@@ -99,4 +101,3 @@ export async function DELETE(
     );
   }
 }
-

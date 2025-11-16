@@ -63,75 +63,75 @@ export default function TransferPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading transfers...</div>
+        <div className="text-center py-8 md:py-12 text-muted-foreground text-sm">Loading transfers...</div>
       ) : transfers && transfers.length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {Object.entries(groupedTransfers).map(([date, dayTransfers]) => (
             <div key={date} className="space-y-3">
               <div className="flex items-center gap-2 px-2">
                 <div className="h-px flex-1 bg-border" />
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                <h3 className="text-xs md:text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                   {date}
                 </h3>
                 <div className="h-px flex-1 bg-border" />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {dayTransfers.map((transfer) => {
-                  const FromIcon = transfer.fromAccount?.icon && Icons[transfer.fromAccount.icon as keyof typeof Icons]
+                  const FromIcon = (transfer.fromAccount?.icon && Icons[transfer.fromAccount.icon as keyof typeof Icons]
                     ? Icons[transfer.fromAccount.icon as keyof typeof Icons]
-                    : Icons.Wallet;
-                  const ToIcon = transfer.toAccount?.icon && Icons[transfer.toAccount.icon as keyof typeof Icons]
+                    : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
+                  const ToIcon = (transfer.toAccount?.icon && Icons[transfer.toAccount.icon as keyof typeof Icons]
                     ? Icons[transfer.toAccount.icon as keyof typeof Icons]
-                    : Icons.Wallet;
+                    : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
 
                   return (
-                    <Card key={transfer.id} className="hover:shadow-lg transition-all group">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                              <ArrowLeftRight className="h-6 w-6 text-primary" />
+                    <Card key={transfer.id} className="hover:shadow-md transition-all group">
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <ArrowLeftRight className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                             </div>
-                            <div>
-                              <h3 className="font-semibold text-lg">Transfer</h3>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-base md:text-lg">Transfer</h3>
                               {transfer.note && (
-                                <p className="text-sm text-muted-foreground mt-1">{transfer.note}</p>
+                                <p className="text-xs md:text-sm text-muted-foreground mt-1 truncate">{transfer.note}</p>
                               )}
                             </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-7 w-7 md:h-8 md:w-8 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                             onClick={() => handleDelete(transfer.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                           </Button>
                         </div>
-                        <div className="flex items-center justify-between pt-4 border-t">
-                          <div className="flex items-center gap-4 flex-1">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                                <FromIcon className="h-5 w-5 text-red-600" />
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 pt-3 md:pt-4 border-t">
+                          <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                              <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                <FromIcon className="h-4 w-4 md:h-5 md:w-5 text-red-600" />
                               </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">From</p>
-                                <p className="font-semibold">{transfer.fromAccount?.name || "Unknown"}</p>
+                              <div className="min-w-0">
+                                <p className="text-xs md:text-sm text-muted-foreground">From</p>
+                                <p className="font-semibold text-sm md:text-base truncate">{transfer.fromAccount?.name || "Unknown"}</p>
                               </div>
                             </div>
-                            <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                <ToIcon className="h-5 w-5 text-green-600" />
+                            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
+                            <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                              <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                                <ToIcon className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
                               </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">To</p>
-                                <p className="font-semibold">{transfer.toAccount?.name || "Unknown"}</p>
+                              <div className="min-w-0">
+                                <p className="text-xs md:text-sm text-muted-foreground">To</p>
+                                <p className="font-semibold text-sm md:text-base truncate">{transfer.toAccount?.name || "Unknown"}</p>
                               </div>
                             </div>
                           </div>
-                          <div className="text-right ml-4">
-                            <p className="text-2xl font-bold">
+                          <div className="text-left sm:text-right flex-shrink-0">
+                            <p className="text-xl md:text-2xl font-bold">
                               {formatCurrency(transfer.amount, transfer.fromAccount?.currency || "IDR")}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
@@ -152,18 +152,18 @@ export default function TransferPage() {
         </div>
       ) : (
         <Card>
-          <CardContent className="py-16 text-center">
-            <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <ArrowLeftRight className="h-8 w-8 text-muted-foreground" />
+          <CardContent className="py-12 md:py-16 text-center">
+            <div className="mx-auto h-12 w-12 md:h-16 md:w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <ArrowLeftRight className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
             </div>
-            <p className="text-lg font-medium mb-2">No transfers yet</p>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-base md:text-lg font-medium mb-2">No transfers yet</p>
+            <p className="text-xs md:text-sm text-muted-foreground mb-6">
               Transfer money between your accounts to get started
             </p>
             <TransferForm
               trigger={
-                <Button size="lg">
-                  <Plus className="mr-2 h-5 w-5" />
+                <Button size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Transfer
                 </Button>
               }

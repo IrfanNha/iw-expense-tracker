@@ -46,7 +46,7 @@ export function AccountSelect({
           {selectedAccount && (
             <div className="flex items-center gap-2">
               {selectedAccount.icon && Icons[selectedAccount.icon as keyof typeof Icons] ? (
-                React.createElement(Icons[selectedAccount.icon as keyof typeof Icons], {
+                React.createElement(Icons[selectedAccount.icon as keyof typeof Icons] as unknown as React.ComponentType<{ className?: string }>, {
                   className: "h-4 w-4",
                 })
               ) : (
@@ -62,9 +62,9 @@ export function AccountSelect({
       </SelectTrigger>
       <SelectContent>
         {filteredAccounts.map((account) => {
-          const IconComponent = account.icon && Icons[account.icon as keyof typeof Icons]
+          const IconComponent = (account.icon && Icons[account.icon as keyof typeof Icons]
             ? Icons[account.icon as keyof typeof Icons]
-            : Icons.Wallet;
+            : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
           
           return (
             <SelectItem key={account.id} value={account.id}>

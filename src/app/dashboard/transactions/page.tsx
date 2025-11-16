@@ -11,14 +11,8 @@ import { formatCurrency } from "@/lib/money";
 import { Plus, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-
-const COLORS = [
-  "#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16",
-  "#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9",
-  "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
-  "#ec4899", "#f43f5e"
-];
+import { DonutChart } from "@/components/DonutChart";
+import { IncomeExpenseChart } from "@/components/IncomeExpenseChart";
 
 export default function TransactionsPage() {
   const [selectedDate, setSelectedDate] = React.useState(new Date());
@@ -86,9 +80,30 @@ export default function TransactionsPage() {
     );
   }, [transactions, selectedDate, activeTab]);
 
-  // Calculate category totals for chart
+  // Calculate income and expense totals for selected date
+  const dayTotals = React.useMemo(() => {
+    if (!transactions) return { income: 0, expense: 0 };
+    const selectedDateStr = formatDateForFilter(selectedDate);
+    const dayTransactions = transactions.filter((t) => {
+      const transactionDate = formatDateForFilter(new Date(t.occurredAt));
+      return transactionDate === selectedDateStr && 
+             t.type !== "TRANSFER_DEBIT" && 
+             t.type !== "TRANSFER_CREDIT";
+    });
+
+    const income = dayTransactions
+      .filter((t) => t.type === "INCOME")
+      .reduce((sum, t) => sum + t.amount, 0);
+    const expense = dayTransactions
+      .filter((t) => t.type === "EXPENSE")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return { income, expense };
+  }, [transactions, selectedDate]);
+
+  // Calculate category totals for chart (only for income/expense tabs)
   const categoryData = React.useMemo(() => {
-    if (!filteredTransactions.length) return [];
+    if (activeTab === "all" || !filteredTransactions.length) return [];
     
     const categoryMap = new Map<string, number>();
     filteredTransactions.forEach((t) => {
@@ -105,7 +120,7 @@ export default function TransactionsPage() {
         percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0",
       }))
       .sort((a, b) => b.value - a.value);
-  }, [filteredTransactions]);
+  }, [filteredTransactions, activeTab]);
 
   const totalAmount = categoryData.reduce((sum, item) => sum + item.value, 0);
 
@@ -120,18 +135,18 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Transactions</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Transactions</h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1">
             View and manage all your transactions
           </p>
         </div>
         <TransactionForm
           trigger={
-            <Button size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
+            <Button size="sm" className="gap-1.5 sm:gap-2 h-7 sm:h-8 md:h-9 text-[10px] sm:text-xs md:text-sm">
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Add Transaction</span>
               <span className="sm:hidden">Add</span>
             </Button>
@@ -141,18 +156,18 @@ export default function TransactionsPage() {
 
       {/* Date Navigation */}
       <Card>
-        <CardHeader className="px-4 py-3 md:px-6 md:py-4">
-          <div className="flex items-center justify-center gap-3 md:gap-4">
+        <CardHeader className="px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
             <Button
               variant="outline"
               size="icon"
               onClick={goToPreviousDay}
-              className="h-9 w-9 md:h-10 md:w-10"
+              className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10"
             >
-              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </Button>
-            <div className="text-center min-w-[150px] md:min-w-[200px]">
-              <p className="text-sm md:text-base lg:text-lg font-semibold">
+            <div className="text-center min-w-[120px] sm:min-w-[150px] md:min-w-[200px]">
+              <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold">
                 {formatDateDisplay(selectedDate)}
               </p>
             </div>
@@ -160,80 +175,40 @@ export default function TransactionsPage() {
               variant="outline"
               size="icon"
               onClick={goToNextDay}
-              className="h-9 w-9 md:h-10 md:w-10"
+              className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10"
             >
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+              <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </Button>
           </div>
         </CardHeader>
       </Card>
 
       {/* Chart and Transactions */}
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3">
         {/* Donut Chart */}
         <Card className="lg:col-span-1">
-          <CardHeader className="px-4 py-3 md:px-6 md:py-4">
-            <CardTitle className="text-base md:text-lg">
-              {activeTab === "expense" ? "Expense" : activeTab === "income" ? "Income" : "All"} by Category
+          <CardHeader className="px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4">
+            <CardTitle className="text-sm sm:text-base md:text-lg">
+              {activeTab === "all" ? "Income vs Expense" : activeTab === "expense" ? "Expense by Category" : "Income by Category"}
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm">
+            <CardDescription className="text-[10px] sm:text-xs md:text-sm">
               {formatDateDisplay(selectedDate)}
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
+          <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6">
             {transactionsLoading ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">Loading...</div>
+              <div className="text-center py-8 text-muted-foreground text-xs">Loading...</div>
+            ) : activeTab === "all" ? (
+              <IncomeExpenseChart income={dayTotals.income} expense={dayTotals.expense} />
             ) : categoryData.length > 0 ? (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-2xl md:text-3xl font-bold">
-                    {formatCurrency(totalAmount)}
-                  </p>
-                  <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                    Total {activeTab === "expense" ? "Expense" : activeTab === "income" ? "Income" : ""}
-                  </p>
-                </div>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number) => formatCurrency(value)}
-                      contentStyle={{ borderRadius: "8px", border: "1px solid hsl(var(--border))" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {categoryData.map((item, index) => (
-                    <div key={item.name} className="flex items-center justify-between text-xs md:text-sm">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div
-                          className="h-3 w-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <span className="truncate">{item.name}</span>
-                      </div>
-                      <div className="text-right flex-shrink-0 ml-2">
-                        <span className="font-semibold">{item.percentage}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <DonutChart
+                data={categoryData}
+                totalAmount={totalAmount}
+                title={`Total ${activeTab === "expense" ? "Expense" : "Income"}`}
+              />
             ) : (
-              <div className="text-center py-12 text-muted-foreground text-sm">
-                No {activeTab === "expense" ? "expense" : activeTab === "income" ? "income" : ""} data for this date
+              <div className="text-center py-8 text-muted-foreground text-xs">
+                No {activeTab} data for this date
               </div>
             )}
           </CardContent>
@@ -242,50 +217,50 @@ export default function TransactionsPage() {
         {/* Transaction List */}
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader className="px-4 py-3 md:px-6 md:py-4">
-              <CardTitle className="text-base md:text-lg">Transaction List</CardTitle>
+            <CardHeader className="px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4">
+              <CardTitle className="text-sm sm:text-base md:text-lg">Transaction List</CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
+            <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6">
               <Tabs value={activeTab} onValueChange={(v) => {
                 setActiveTab(v as "all" | "income" | "expense");
               }}>
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="all" className="text-xs md:text-sm">All</TabsTrigger>
-                  <TabsTrigger value="expense" className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
-                    <TrendingDown className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                <TabsList className="grid w-full grid-cols-3 h-8 sm:h-9 md:h-10">
+                  <TabsTrigger value="all" className="text-[10px] sm:text-xs md:text-sm">All</TabsTrigger>
+                  <TabsTrigger value="expense" className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-[10px] sm:text-xs md:text-sm">
+                    <TrendingDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                     <span className="hidden sm:inline">Expense</span>
                     <span className="sm:hidden">Exp</span>
                   </TabsTrigger>
-                  <TabsTrigger value="income" className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
-                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <TabsTrigger value="income" className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-[10px] sm:text-xs md:text-sm">
+                    <TrendingUp className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                     <span className="hidden sm:inline">Income</span>
                     <span className="sm:hidden">Inc</span>
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value={activeTab} className="mt-4 md:mt-6">
+                <TabsContent value={activeTab} className="mt-3 sm:mt-4 md:mt-6">
                   {transactionsLoading ? (
-                    <div className="text-center py-8 md:py-12 text-muted-foreground text-sm">
+                    <div className="text-center py-6 sm:py-8 md:py-12 text-muted-foreground text-xs sm:text-sm">
                       Loading transactions...
                     </div>
                   ) : filteredTransactions.length === 0 ? (
-                    <div className="text-center py-8 md:py-12">
-                      <p className="text-muted-foreground mb-2 text-sm">No transactions found</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="text-center py-6 sm:py-8 md:py-12">
+                      <p className="text-muted-foreground mb-2 text-xs sm:text-sm">No transactions found</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
                         {activeTab === "all"
                           ? `No transactions on ${formatDateDisplay(selectedDate)}`
                           : `No ${activeTab} transactions on ${formatDateDisplay(selectedDate)}`}
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 sm:space-y-2">
                       {filteredTransactions.map((transaction) => {
                         const isIncome = transaction.type === "INCOME";
                         const Icon = isIncome ? TrendingUp : TrendingDown;
-                        const AccountIcon =
+                        const AccountIconComponent =
                           transaction.account?.icon &&
                           Icons[transaction.account.icon as keyof typeof Icons]
-                            ? Icons[transaction.account.icon as keyof typeof Icons]
+                            ? (Icons[transaction.account.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>)
                             : Icons.Wallet;
 
                         return (
@@ -293,43 +268,43 @@ export default function TransactionsPage() {
                             key={transaction.id}
                             className="hover:shadow-md transition-shadow"
                           >
-                            <CardContent className="p-3 md:p-4">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                            <CardContent className="p-2 sm:p-3 md:p-4">
+                              <div className="flex items-center justify-between gap-2 sm:gap-3">
+                                <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
                                   <div
                                     className={cn(
-                                      "flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-lg md:rounded-xl flex-shrink-0",
+                                      "flex h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 lg:h-12 lg:w-12 items-center justify-center rounded-lg md:rounded-xl flex-shrink-0",
                                       isIncome
                                         ? "bg-green-500/10 text-green-600"
                                         : "bg-red-500/10 text-red-600"
                                     )}
                                   >
-                                    <Icon className="h-5 w-5 md:h-6 md:w-6" />
+                                    <Icon className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 lg:h-6 lg:w-6" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className="font-semibold text-sm md:text-base truncate">
+                                    <div className="flex items-center gap-1.5 sm:gap-2">
+                                      <p className="font-semibold text-xs sm:text-sm md:text-base truncate">
                                         {transaction.category?.name || "Uncategorized"}
                                       </p>
                                     </div>
-                                    <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground mt-0.5">
-                                      <AccountIcon className="h-3 w-3 flex-shrink-0" />
+                                    <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-0.5">
+                                      <AccountIconComponent className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
                                       <span className="truncate">
                                         {transaction.account?.name}
                                       </span>
                                     </div>
                                     {transaction.note && (
-                                      <p className="text-xs md:text-sm text-muted-foreground mt-0.5 line-clamp-1">
+                                      <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-0.5 line-clamp-1">
                                         {transaction.note}
                                       </p>
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+                                <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-shrink-0">
                                   <div className="text-right">
                                     <p
                                       className={cn(
-                                        "text-base md:text-lg font-bold whitespace-nowrap",
+                                        "text-sm sm:text-base md:text-lg font-bold whitespace-nowrap",
                                         isIncome ? "text-green-600" : "text-red-600"
                                       )}
                                     >
@@ -339,7 +314,7 @@ export default function TransactionsPage() {
                                         transaction.account?.currency || "IDR"
                                       )}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground">
                                       {new Date(transaction.occurredAt).toLocaleTimeString("id-ID", {
                                         hour: "2-digit",
                                         minute: "2-digit",
@@ -350,9 +325,9 @@ export default function TransactionsPage() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleDelete(transaction.id)}
-                                    className="h-7 w-7 md:h-8 md:w-8"
+                                    className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                    <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                                   </Button>
                                 </div>
                               </div>

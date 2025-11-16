@@ -19,7 +19,10 @@ export async function PUT(req: Request) {
       const parsed = updateNameSchema.safeParse(data);
       if (!parsed.success) {
         return NextResponse.json(
-          { error: "Invalid input", details: parsed.error.errors },
+          {
+            error: "Invalid input",
+            details: parsed.error.flatten().fieldErrors,
+          },
           { status: 400 }
         );
       }
@@ -39,7 +42,10 @@ export async function PUT(req: Request) {
       const parsed = updatePinSchema.safeParse(data);
       if (!parsed.success) {
         return NextResponse.json(
-          { error: "Invalid input", details: parsed.error.errors },
+          {
+            error: "Invalid input",
+            details: parsed.error.flatten().fieldErrors,
+          },
           { status: 400 }
         );
       }
@@ -58,7 +64,10 @@ export async function PUT(req: Request) {
       }
 
       // Verify current PIN
-      const isValid = await bcrypt.compare(parsed.data.currentPin, user.hashedPin);
+      const isValid = await bcrypt.compare(
+        parsed.data.currentPin,
+        user.hashedPin
+      );
       if (!isValid) {
         return NextResponse.json(
           { error: "Current PIN is incorrect" },
@@ -91,4 +100,3 @@ export async function PUT(req: Request) {
     );
   }
 }
-

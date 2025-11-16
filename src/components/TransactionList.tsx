@@ -134,11 +134,12 @@ export function TransactionList({ onDelete }: TransactionListProps) {
                 {dayTransactions.map((transaction) => {
                   const isIncome = transaction.type === "INCOME";
                   const Icon = isIncome ? TrendingUp : TrendingDown;
-                  const AccountIcon =
+                  const AccountIcon = (
                     transaction.account?.icon &&
                     Icons[transaction.account.icon as keyof typeof Icons]
                       ? Icons[transaction.account.icon as keyof typeof Icons]
-                      : Icons.Wallet;
+                      : Icons.Wallet
+                  ) as unknown as React.ComponentType<{ className?: string }>;
 
                   return (
                     <Card

@@ -4,7 +4,7 @@ import { z } from "zod";
 export const accountSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   type: z.enum(["CASH", "BANK", "CARD", "E_WALLET", "OTHER"]),
-  currency: z.string().default("IDR"),
+  currency: z.string().min(1, "Currency is required"),
   icon: z.string().optional(),
 });
 
@@ -15,7 +15,7 @@ export const updateAccountSchema = accountSchema.partial().extend({
 // Category validators
 export const categorySchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  isIncome: z.boolean().default(false),
+  isIncome: z.boolean(),
   icon: z.string().optional(),
 });
 

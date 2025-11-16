@@ -1,0 +1,108 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { formatCurrency } from "@/lib/money";
+
+// Dynamic import for the entire chart component
+const ChartContent = dynamic(
+  () => import("recharts").then((recharts) => {
+    const { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } = recharts;
+    
+    return function ChartContentComponent({ income, expense }: { income: number; expense: number }) {
+      const data = [
+        { name: "Income", value: income, color: "#22c55e" },
+        { name: "Expense", value: expense, color: "#ef4444" },
+      ].filter(item => item.value > 0);
+
+      const total = income + expense;
+      const incomePercentage = total > 0 ? ((income / total) * 100).toFixed(1) : "0";
+      const expensePercentage = total > 0 ? ((expense / total) * 100).toFixed(1) : "0";
+
+      return (
+        <div className="w-full" style={{ height: "clamp(120px, 18vw, 160px)" }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius="35%"
+                outerRadius="60%"
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{ borderRadius: "8px", border: "1px solid hsl(var(--border))", fontSize: "12px" }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    };
+  }),
+  { 
+    ssr: false,
+    loading: () => <div className="text-center py-8 text-muted-foreground text-xs">Loading chart...</div>
+  }
+);
+
+interface IncomeExpenseChartProps {
+  income: number;
+  expense: number;
+}
+
+export function IncomeExpenseChart({ income, expense }: IncomeExpenseChartProps) {
+  const total = income + expense;
+  const incomePercentage = total > 0 ? ((income / total) * 100).toFixed(1) : "0";
+  const expensePercentage = total > 0 ? ((expense / total) * 100).toFixed(1) : "0";
+
+  if (total === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground text-xs">
+        No data available
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 sm:space-y-3">
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 text-[10px] sm:text-xs md:text-sm">
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+            <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-green-600 flex-shrink-0" />
+            <span className="text-muted-foreground">Income</span>
+            <span className="font-semibold">{incomePercentage}%</span>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+            <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-red-600 flex-shrink-0" />
+            <span className="text-muted-foreground">Expense</span>
+            <span className="font-semibold">{expensePercentage}%</span>
+          </div>
+        </div>
+      </div>
+      <ChartContent income={income} expense={expense} />
+      <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs md:text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Total Income</span>
+          <span className="font-semibold text-green-600">{formatCurrency(income)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Total Expense</span>
+          <span className="font-semibold text-red-600">{formatCurrency(expense)}</span>
+        </div>
+        <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t">
+          <span className="font-medium">Net</span>
+          <span className={`font-bold ${total >= 0 ? "text-green-600" : "text-red-600"}`}>
+            {formatCurrency(income - expense)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+

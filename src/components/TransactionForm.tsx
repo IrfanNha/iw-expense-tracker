@@ -148,9 +148,9 @@ export function TransactionForm({ trigger, onSuccess }: TransactionFormProps) {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-lg">
                   {filteredCategories.length > 0 ? (
                     filteredCategories.map((category) => {
-                      const Icon = category.icon && Icons[category.icon as keyof typeof Icons]
+                      const Icon = (category.icon && Icons[category.icon as keyof typeof Icons]
                         ? Icons[category.icon as keyof typeof Icons]
-                        : Icons.Tag;
+                        : Icons.Tag) as unknown as React.ComponentType<{ className?: string }>;
                       const isSelected = form.watch("categoryId") === category.id;
 
                       return (

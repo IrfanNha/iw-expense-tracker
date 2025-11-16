@@ -17,6 +17,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({ accounts });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Get accounts error:", error);
     return NextResponse.json(
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid input", details: parsed.error.errors },
+        { error: "Invalid input", details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ account }, { status: 201 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Create account error:", error);
     return NextResponse.json(
@@ -59,4 +61,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

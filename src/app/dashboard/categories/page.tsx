@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/useCategories";
+import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, type Category } from "@/hooks/useCategories";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -65,7 +65,7 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleEdit = (category: typeof categories[0]) => {
+  const handleEdit = (category: Category) => {
     setEditingId(category.id);
     setActiveTab(category.isIncome ? "income" : "expense");
     form.reset({
@@ -191,9 +191,9 @@ export default function CategoriesPage() {
           {expenseCategories.length > 0 ? (
             <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {expenseCategories.map((category) => {
-                const IconComponent = category.icon && Icons[category.icon as keyof typeof Icons]
+                const IconComponent = (category.icon && Icons[category.icon as keyof typeof Icons]
                   ? Icons[category.icon as keyof typeof Icons]
-                  : Icons.Tag;
+                  : Icons.Tag) as unknown as React.ComponentType<{ className?: string }>;
                 
                 return (
                   <Card key={category.id} className="hover:shadow-md transition-all group">
@@ -244,9 +244,9 @@ export default function CategoriesPage() {
           {incomeCategories.length > 0 ? (
             <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {incomeCategories.map((category) => {
-                const IconComponent = category.icon && Icons[category.icon as keyof typeof Icons]
+                const IconComponent = (category.icon && Icons[category.icon as keyof typeof Icons]
                   ? Icons[category.icon as keyof typeof Icons]
-                  : Icons.Tag;
+                  : Icons.Tag) as unknown as React.ComponentType<{ className?: string }>;
                 
                 return (
                   <Card key={category.id} className="hover:shadow-md transition-all group">

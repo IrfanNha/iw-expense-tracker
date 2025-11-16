@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/nextauth-config";
@@ -20,7 +21,7 @@ export async function PUT(
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid input", details: parsed.error.errors },
+        { error: "Invalid input", details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -34,6 +35,7 @@ export async function PUT(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id: _, ...data } = parsed.data;
     const category = await prisma.category.update({
       where: { id },
@@ -84,4 +86,3 @@ export async function DELETE(
     );
   }
 }
-

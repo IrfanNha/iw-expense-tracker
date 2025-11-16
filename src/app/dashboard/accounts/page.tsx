@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount } from "@/hooks/useAccounts";
+import {
+  useAccounts,
+  useCreateAccount,
+  useUpdateAccount,
+  useDeleteAccount,
+  type Account,
+} from "@/hooks/useAccounts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -29,7 +35,6 @@ import { accountSchema } from "@/lib/validators";
 import { formatCurrency } from "@/lib/money";
 import * as Icons from "lucide-react";
 import { Plus, Pencil, Trash2, Wallet } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const formSchema = accountSchema;
 
@@ -68,7 +73,7 @@ export default function AccountsPage() {
     }
   };
 
-  const handleEdit = (account: typeof accounts[0]) => {
+  const handleEdit = (account: Account) => {
     setEditingId(account.id);
     form.reset({
       name: account.name,
@@ -80,7 +85,11 @@ export default function AccountsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this account? This cannot be undone if it has transactions.")) {
+    if (
+      confirm(
+        "Are you sure you want to delete this account? This cannot be undone if it has transactions."
+      )
+    ) {
       try {
         await deleteAccount.mutateAsync(id);
       } catch (error: any) {
@@ -89,24 +98,30 @@ export default function AccountsPage() {
     }
   };
 
-  const totalBalance = accounts?.reduce((sum, acc) => sum + acc.balance, 0) || 0;
+  const totalBalance =
+    accounts?.reduce((sum, acc) => sum + acc.balance, 0) || 0;
 
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Accounts</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Accounts
+          </h1>
           <p className="text-sm md:text-base text-muted-foreground mt-1">
             Manage your financial accounts
           </p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => {
-          setOpen(o);
-          if (!o) {
-            setEditingId(null);
-            form.reset();
-          }
-        }}>
+        <Dialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) {
+              setEditingId(null);
+              form.reset();
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
@@ -115,9 +130,13 @@ export default function AccountsPage() {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingId ? "Edit Account" : "Create Account"}</DialogTitle>
+              <DialogTitle>
+                {editingId ? "Edit Account" : "Create Account"}
+              </DialogTitle>
               <DialogDescription>
-                {editingId ? "Update account details" : "Add a new financial account"}
+                {editingId
+                  ? "Update account details"
+                  : "Add a new financial account"}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -183,7 +202,10 @@ export default function AccountsPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createAccount.isPending || updateAccount.isPending}>
+                <Button
+                  type="submit"
+                  disabled={createAccount.isPending || updateAccount.isPending}
+                >
                   {editingId ? "Update" : "Create"}
                 </Button>
               </div>
@@ -197,7 +219,9 @@ export default function AccountsPage() {
         <CardContent className="p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs md:text-sm font-medium text-muted-foreground">Total Balance</p>
+              <p className="text-xs md:text-sm font-medium text-muted-foreground">
+                Total Balance
+              </p>
               <p className="text-xl md:text-2xl lg:text-3xl font-bold mt-1">
                 {formatCurrency(totalBalance)}
               </p>
@@ -210,16 +234,22 @@ export default function AccountsPage() {
       </Card>
 
       {isLoading ? (
-        <div className="text-center py-8 md:py-12 text-muted-foreground text-sm">Loading accounts...</div>
+        <div className="text-center py-8 md:py-12 text-muted-foreground text-sm">
+          Loading accounts...
+        </div>
       ) : accounts && accounts.length > 0 ? (
         <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account) => {
-            const IconComponent = account.icon && Icons[account.icon as keyof typeof Icons]
-              ? Icons[account.icon as keyof typeof Icons]
-              : Icons.Wallet;
-            
+            const IconComponent =
+              (account.icon && Icons[account.icon as keyof typeof Icons]
+                ? Icons[account.icon as keyof typeof Icons]
+                : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
+
             return (
-              <Card key={account.id} className="hover:shadow-md transition-all group">
+              <Card
+                key={account.id}
+                className="hover:shadow-md transition-all group"
+              >
                 <CardContent className="p-4 md:p-6">
                   <div className="flex items-start justify-between mb-3 md:mb-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -227,8 +257,12 @@ export default function AccountsPage() {
                         <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-base md:text-lg truncate">{account.name}</h3>
-                        <p className="text-xs md:text-sm text-muted-foreground capitalize">{account.type.toLowerCase().replace("_", " ")}</p>
+                        <h3 className="font-semibold text-base md:text-lg truncate">
+                          {account.name}
+                        </h3>
+                        <p className="text-xs md:text-sm text-muted-foreground capitalize">
+                          {account.type.toLowerCase().replace("_", " ")}
+                        </p>
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -266,7 +300,9 @@ export default function AccountsPage() {
             <div className="mx-auto h-12 w-12 md:h-16 md:w-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <Wallet className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
             </div>
-            <p className="text-base md:text-lg font-medium mb-2">No accounts yet</p>
+            <p className="text-base md:text-lg font-medium mb-2">
+              No accounts yet
+            </p>
             <p className="text-xs md:text-sm text-muted-foreground mb-6">
               Create your first account to start tracking your finances
             </p>
