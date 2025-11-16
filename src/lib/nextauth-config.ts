@@ -73,7 +73,7 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
-  // @ts-expect-error - trustHost is supported in NextAuth v4.24+ but types may not be updated
-  trustHost: true, // Required for Vercel and other platforms
-} as NextAuthOptions;
+  trustHost: true, 
+  } as NextAuthOptions;
+  
 
