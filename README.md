@@ -210,9 +210,28 @@ docker run -p 3000:3000 --env-file .env iw-expense-tracker
 - [ ] Set secure `NEXTAUTH_SECRET`
 - [ ] Configure `NEXTAUTH_URL` with production domain
 - [ ] Add Cloudflare Turnstile keys
-- [ ] Run database migrations
+- [ ] Run database migrations (`prisma migrate deploy`)
+- [ ] Verify Prisma Client generation (check build logs)
 - [ ] Test authentication flow
 - [ ] Verify security features
+
+### Prisma Deployment Notes
+
+**Important:** This project uses Prisma with custom output path (`src/generated/prisma`). 
+
+The build process automatically runs `prisma generate` via:
+- `postinstall` script (runs on `npm install`)
+- `build` script (runs `prisma generate && next build`)
+
+**Binary Targets:** Configured for multiple platforms:
+- `native` (local development)
+- `rhel-openssl-3.0.x` (Vercel, Railway, most Linux servers)
+- `linux-musl-openssl-3.0.x` (Alpine Linux, some Docker containers)
+
+If you encounter "Query Engine not found" errors:
+1. Check build logs to ensure `prisma generate` ran
+2. Verify `src/generated/prisma` is included in deployment
+3. Ensure `binaryTargets` in `prisma/schema.prisma` includes your platform
 
 ## 📝 Available Scripts
 
