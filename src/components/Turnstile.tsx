@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 declare global {
   interface Window {
@@ -39,12 +40,16 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(({
   onError,
   onExpire,
   theme = "auto",
-  size = "normal",
+  size: propSize = "normal",
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+
+  // Use compact size on mobile, otherwise use prop size
+  const size = isMobile ? "compact" : propSize;
 
   // Check if Turnstile should be disabled (development mode)
   const isDevelopment = process.env.NEXT_PUBLIC_APP_ENV === "development" || 
@@ -173,8 +178,15 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(({
   }
 
   return (
-    <div>
-      <div ref={containerRef} className="flex justify-center" />
+    <div className="flex flex-col items-center w-full">
+      <div 
+        ref={containerRef} 
+        className="flex justify-center w-full transform transition-transform"
+        style={{
+          transform: isMobile ? 'scale(0.85)' : 'scale(1)',
+          transformOrigin: 'center',
+        }}
+      />
       {error && isLoaded && (
         <p className="text-xs text-destructive mt-2 text-center">{error}</p>
       )}

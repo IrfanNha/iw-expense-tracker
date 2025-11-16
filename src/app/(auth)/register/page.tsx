@@ -246,7 +246,7 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 w-full">
                 <Turnstile
                   ref={turnstileRef}
                   onVerify={handleTurnstileVerify}
