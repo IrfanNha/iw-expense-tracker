@@ -104,31 +104,55 @@ function LoginForm() {
     }
 
     try {
-
       // Proceed with login
+      console.log("Attempting login for:", data.email);
       const result = await signIn("credentials", {
         email: data.email,
         pin: data.pin,
         redirect: false,
       });
 
+      console.log("SignIn result:", result);
+
+      // Handle response - check for error first
       if (result?.error) {
+        console.error("Login error:", result.error);
         setError("Invalid email or PIN. Please check your credentials and try again.");
         if (turnstileRef.current) {
           turnstileRef.current.reset();
         }
         setTurnstileToken(null);
-      } else {
-        router.push("/dashboard");
-        router.refresh();
+        setIsLoading(false);
+        return;
       }
+
+      // If successful (ok === true or no error), redirect
+      if (result && (result.ok === true || result.error === undefined)) {
+        console.log("Login successful, redirecting...");
+        // Use window.location for more reliable redirect in production
+        window.location.href = "/dashboard";
+        return;
+      }
+
+      // If result is null/undefined, might be a silent failure
+      if (!result) {
+        console.error("SignIn returned null/undefined");
+        setError("Login failed. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Fallback redirect
+      console.log("Fallback redirect");
+      router.push("/dashboard");
+      router.refresh();
     } catch (err: any) {
+      console.error("Login error:", err);
       setError(err.message || "An error occurred. Please try again.");
       if (turnstileRef.current) {
         turnstileRef.current.reset();
       }
       setTurnstileToken(null);
-    } finally {
       setIsLoading(false);
     }
   };

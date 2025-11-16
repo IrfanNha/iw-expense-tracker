@@ -12,29 +12,37 @@ export const authOptions: NextAuthOptions = {
         pin: { label: "PIN", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.pin) {
+        try {
+          if (!credentials?.email || !credentials?.pin) {
+            console.error("Missing credentials");
+            return null;
+          }
+
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
+
+          if (!user || !user.hashedPin) {
+            console.error("User not found or PIN not set");
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(credentials.pin, user.hashedPin);
+
+          if (!isValid) {
+            console.error("Invalid PIN");
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          };
+        } catch (error) {
+          console.error("Authorize error:", error);
           return null;
         }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!user || !user.hashedPin) {
-          return null;
-        }
-
-        const isValid = await bcrypt.compare(credentials.pin, user.hashedPin);
-
-        if (!isValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
       },
     }),
   ],
@@ -50,6 +58,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
+        token.name = user.name;
       }
       return token;
     },
@@ -57,10 +66,13 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
+        session.user.name = token.name as string;
       }
       return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
+  trustHost: true, // Required for Vercel and other platforms
 };
 

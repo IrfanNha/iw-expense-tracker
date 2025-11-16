@@ -60,6 +60,32 @@ Make sure your deployment platform:
 3. Verify `src/generated/prisma` is included in deployment
 4. For Vercel, check Build Logs to confirm `prisma generate` ran
 
+#### Login Not Working / Hanging After Deploy
+
+**Common Causes:**
+1. **Missing NEXTAUTH_URL** - Must be set to your production domain (e.g., `https://your-app.vercel.app`)
+2. **Missing NEXTAUTH_SECRET** - Generate with `openssl rand -base64 32`
+3. **Session not being created** - Check browser console and server logs
+
+**Solution:**
+1. Verify environment variables in your deployment platform:
+   ```bash
+   NEXTAUTH_URL=https://your-app.vercel.app
+   NEXTAUTH_SECRET=your-secret-key-here
+   ```
+2. Check browser console for errors (F12 → Console)
+3. Check server logs for NextAuth errors
+4. Ensure `trustHost: true` is set in `nextauth-config.ts` (already configured)
+5. Try clearing browser cookies and cache
+6. Verify database connection is working (registration works, so this should be OK)
+
+**Debug Steps:**
+- Open browser DevTools (F12)
+- Go to Network tab
+- Try logging in
+- Check for failed requests to `/api/auth/callback/credentials`
+- Check Console tab for JavaScript errors
+
 #### Error: "EPERM: operation not permitted"
 
 This usually happens on Windows when files are locked. Solutions:
