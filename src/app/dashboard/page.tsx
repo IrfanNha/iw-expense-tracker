@@ -66,7 +66,7 @@ export default function DashboardPage() {
   const formatDateDisplay = (date: Date) => {
     return date.toLocaleDateString("id-ID", {
       day: "numeric",
-      month: "long",
+      month: "short",
       year: "numeric",
     });
   };
