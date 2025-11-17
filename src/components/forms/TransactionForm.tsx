@@ -16,8 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AccountSelect } from "@/components/AccountSelect";
-import { AmountInput } from "@/components/AmountInput";
+import { AccountSelect } from "@/components/forms/AccountSelect";
+import { AmountInput } from "@/components/forms/AmountInput";
 import { useCreateTransaction } from "@/hooks/useTransactions";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useCategories } from "@/hooks/useCategories";

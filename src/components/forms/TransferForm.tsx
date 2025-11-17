@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { AccountSelect } from "@/components/AccountSelect";
+import { AccountSelect } from "@/components/forms/AccountSelect";
 import { useCreateTransfer } from "@/hooks/useTransfer";
 import { useAccounts } from "@/hooks/useAccounts";
 import { parseInputToCents } from "@/lib/money";

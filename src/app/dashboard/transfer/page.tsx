@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { TransferForm } from "@/components/TransferForm";
+import { TransferForm } from "@/components/forms/TransferForm";
 import { useTransfers, useDeleteTransfer } from "@/hooks/useTransfer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

@@ -12,9 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
 import { loginSchema } from "@/lib/validators";
-import { Turnstile, TurnstileRef } from "@/components/Turnstile";
+import { Turnstile, TurnstileRef } from "@/components/features/Turnstile";
 import Link from "next/link";
-import { Wallet, Mail, Lock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, AlertCircle, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type FormData = z.infer<typeof loginSchema>;
@@ -161,12 +162,32 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-black dark:via-zinc-950 dark:to-zinc-900 p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Logo/Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 dark:bg-primary/20 mb-4">
-            <Wallet className="h-8 w-8 text-primary" />
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/10 dark:bg-primary/20 mb-4">
+            <Image
+              src="/logo/light.png"
+              alt="IW Expense Tracker Logo"
+              width={64}
+              height={64}
+              className="w-12 h-12 sm:w-16 sm:h-16 object-contain dark:hidden"
+              priority
+            />
+            <Image
+              src="/logo/dark.png"
+              alt="IW Expense Tracker Logo"
+              width={64}
+              height={64}
+              className="w-12 h-12 sm:w-16 sm:h-16 object-contain hidden dark:block"
+              priority
+            />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Welcome Back</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+            IW Expense Tracker
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground font-medium">
+            irfanwork
+          </p>
+          <p className="text-xs sm:text-sm text-muted-foreground pt-2">
             Sign in to your account to continue
           </p>
         </div>

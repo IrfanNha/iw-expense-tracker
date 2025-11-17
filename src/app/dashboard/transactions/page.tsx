@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { TransactionForm } from "@/components/TransactionForm";
-import { TransactionList } from "@/components/TransactionList";
+import { TransactionForm } from "@/components/forms/TransactionForm";
+import { TransactionList } from "@/components/lists/TransactionList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,8 +11,8 @@ import { formatCurrency } from "@/lib/money";
 import { Plus, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DonutChart } from "@/components/DonutChart";
-import { IncomeExpenseChart } from "@/components/IncomeExpenseChart";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
 
 export default function TransactionsPage() {
   const [selectedDate, setSelectedDate] = React.useState(new Date());

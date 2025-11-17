@@ -7,16 +7,16 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { formatCurrency } from "@/lib/money";
 import { Wallet, TrendingUp, TrendingDown, ArrowLeftRight, Plus, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import * as Icons from "lucide-react";
-import { TransactionForm } from "@/components/TransactionForm";
-import { TransferForm } from "@/components/TransferForm";
+import { TransactionForm } from "@/components/forms/TransactionForm";
+import { TransferForm } from "@/components/forms/TransferForm";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeleteTransaction } from "@/hooks/useTransactions";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 import Link from "next/link";
-import { DonutChart } from "@/components/DonutChart";
-import { IncomeExpenseChart } from "@/components/IncomeExpenseChart";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
 
 async function fetchMonthlyReport() {
   const res = await fetch("/api/reports/monthly");
