@@ -21,23 +21,23 @@
 **Masalah:** Error build terkait CSS import dengan Tailwind CSS v4 di production build di Vercel.
 
 **Error yang Terjadi:**
-```
-Error: Cannot find module '@tailwindcss/postcss'
-```
+1. `Error: Cannot find module '@tailwindcss/postcss'`
+2. `Error: Can't resolve 'tw-animate-css'`
 
 **Penyebab:**
-- `@tailwindcss/postcss` dan `tailwindcss` ada di `devDependencies`, sehingga tidak terinstall saat production build
+- `@tailwindcss/postcss`, `tailwindcss`, dan `tw-animate-css` ada di `devDependencies`, sehingga tidak terinstall saat production build
 - PostCSS tidak bisa menemukan plugin yang diperlukan
+- `tw-animate-css` digunakan di `globals.css` tapi tidak tersedia saat build
 
 **Perbaikan:**
-- ✅ Memindahkan `@tailwindcss/postcss` dan `tailwindcss` ke `dependencies` (diperlukan saat build)
+- ✅ Memindahkan `@tailwindcss/postcss`, `tailwindcss`, dan `tw-animate-css` ke `dependencies` (diperlukan saat build)
 - ✅ Memperbarui PostCSS config dengan format object yang benar
 - ✅ Memastikan CSS diimport hanya di Server Component (layout.tsx)
 - ✅ Menambahkan Node.js engine requirement di package.json
 - ✅ Membersihkan next.config.ts dari konfigurasi yang tidak diperlukan
 
 **File yang Diubah:**
-- `package.json` - Memindahkan tailwindcss dan @tailwindcss/postcss ke dependencies
+- `package.json` - Memindahkan tailwindcss, @tailwindcss/postcss, dan tw-animate-css ke dependencies
 - `postcss.config.mjs` - Memperbaiki format plugins (object bukan array)
 - `next.config.ts` - Membersihkan konfigurasi
 
