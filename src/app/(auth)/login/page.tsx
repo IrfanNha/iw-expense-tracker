@@ -162,8 +162,10 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-black dark:via-zinc-950 dark:to-zinc-900 p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Logo/Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/10 dark:bg-primary/20 mb-4">
+        <div className="flex flex-col items-center space-y-3">
+        <div className="flex items-center gap-4">
+          {/* Logo */}
+          <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/10 dark:bg-primary/20">
             <Image
               src="/logo/light.png"
               alt="IW Expense Tracker Logo"
@@ -181,16 +183,23 @@ function LoginForm() {
               priority
             />
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-            IW Expense Tracker
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground font-medium">
-            irfanwork
-          </p>
-          <p className="text-xs sm:text-sm text-muted-foreground pt-2">
-            Sign in to your account to continue
-          </p>
+
+          <div className="flex flex-col">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-left">
+              IW Expense
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground font-base text-left">
+              by irfanwork
+            </p>
+          </div>
         </div>
+
+        {/* Subtext bawah */}
+        <p className="text-xs sm:text-sm text-muted-foreground pt-2 text-center">
+          Sign in to your account to continue
+        </p>
+      </div>
+
 
         <Card className="border-2 shadow-lg">
           <CardHeader className="space-y-1 pb-4">
