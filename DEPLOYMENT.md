@@ -24,11 +24,13 @@ Vercel will automatically:
 
 **Environment Variables Required:**
 - `DATABASE_URL` - PostgreSQL connection string
-- `NEXTAUTH_URL` - Your production URL
-- `NEXTAUTH_SECRET` - Secret key for JWT
+- `NEXTAUTH_URL` - Your production URL (e.g., `https://iw-expense-tracker.vercel.app`)
+- `NEXTAUTH_SECRET` - Secret key for JWT (generate with `openssl rand -base64 32`)
 - `APP_ENV=production` - Set to production
 - `TURNSTILE_SECRET_KEY` - Cloudflare Turnstile secret (production)
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` - Cloudflare Turnstile site key (production)
+
+**Important:** Make sure `NEXTAUTH_URL` is set to your exact Vercel deployment URL (e.g., `https://iw-expense-tracker.vercel.app`). Do NOT include a trailing slash.
 
 **Build Settings:**
 - Framework Preset: Next.js

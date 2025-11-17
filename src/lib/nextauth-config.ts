@@ -73,7 +73,7 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
-  trustHost: true, 
-  } as NextAuthOptions;
-  
-
+  trustHost: true,
+  // Explicitly set the URL for production
+  url: process.env.NEXTAUTH_URL,
+} as NextAuthOptions;

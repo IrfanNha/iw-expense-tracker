@@ -12,13 +12,23 @@ export default withAuth(
         if (req.nextUrl.pathname.startsWith("/dashboard")) {
           return !!token;
         }
+        // Allow auth routes
+        if (req.nextUrl.pathname.startsWith("/api/auth")) {
+          return true;
+        }
         return true;
       },
+    },
+    pages: {
+      signIn: "/login",
     },
   }
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/api/auth/callback/:path*",
+  ],
 };
 

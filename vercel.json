@@ -1,6 +1,9 @@
 {
   "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "env": {
+    "NEXTAUTH_URL": "https://iw-expense-tracker.vercel.app"
+  }
 }
 
