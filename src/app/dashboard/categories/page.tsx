@@ -90,37 +90,57 @@ export default function CategoriesPage() {
   const expenseCategories = categories?.filter((cat) => !cat.isIncome) || [];
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Categories</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">
+    <div className="space-y-6 md:space-y-8">
+  
+      {/* PAGE HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Categories
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Organize your income and expense categories
           </p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => {
-          setOpen(o);
-          if (!o) {
-            setEditingId(null);
-            form.reset();
-          }
-        }}>
+  
+        <Dialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) {
+              setEditingId(null);
+              form.reset();
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
               Add Category
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+  
+          <DialogContent className="max-w-md space-y-4 md:space-y-5">
             <DialogHeader>
-              <DialogTitle>{editingId ? "Edit Category" : "Create Category"}</DialogTitle>
+              <DialogTitle>
+                {editingId ? "Edit Category" : "Create Category"}
+              </DialogTitle>
               <DialogDescription>
                 {editingId ? "Update category details" : "Add a new category"}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "expense" | "income")}>
-                <TabsList className="grid w-full grid-cols-2">
+  
+            {/* FORM */}
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4 md:space-y-5"
+            >
+              {/* TYPE */}
+              <Tabs
+                value={activeTab}
+                onValueChange={(v) => setActiveTab(v as "expense" | "income")}
+              >
+                <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="expense" className="flex items-center gap-2">
                     <TrendingDown className="h-4 w-4" />
                     Expense
@@ -131,7 +151,8 @@ export default function CategoriesPage() {
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
-
+  
+              {/* NAME */}
               <div className="space-y-2">
                 <Label htmlFor="name">Category Name</Label>
                 <Input
@@ -145,7 +166,8 @@ export default function CategoriesPage() {
                   </p>
                 )}
               </div>
-
+  
+              {/* ICON */}
               <div className="space-y-2">
                 <Label>Icon</Label>
                 <IconPicker
@@ -153,8 +175,9 @@ export default function CategoriesPage() {
                   onValueChange={(value) => form.setValue("icon", value)}
                 />
               </div>
-
-              <div className="flex gap-2 justify-end pt-4 border-t">
+  
+              {/* ACTIONS */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
@@ -166,7 +189,13 @@ export default function CategoriesPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createCategory.isPending || updateCategory.isPending}>
+  
+                <Button
+                  type="submit"
+                  disabled={
+                    createCategory.isPending || updateCategory.isPending
+                  }
+                >
                   {editingId ? "Update" : "Create"}
                 </Button>
               </div>
@@ -174,9 +203,10 @@ export default function CategoriesPage() {
           </DialogContent>
         </Dialog>
       </div>
-
+  
+      {/* TABS */}
       <Tabs defaultValue="expense" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid grid-cols-2 w-full mb-6">
           <TabsTrigger value="expense" className="flex items-center gap-2">
             <TrendingDown className="h-4 w-4" />
             Expense ({expenseCategories.length})
@@ -186,42 +216,65 @@ export default function CategoriesPage() {
             Income ({incomeCategories.length})
           </TabsTrigger>
         </TabsList>
-
+  
+        {/* EXPENSE GRID */}
         <TabsContent value="expense" className="space-y-4">
           {expenseCategories.length > 0 ? (
-            <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="
+              grid gap-4 md:gap-5
+              grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
+            ">
+              {/* === Category Card === */}
               {expenseCategories.map((category) => {
-                const IconComponent = (category.icon && Icons[category.icon as keyof typeof Icons]
-                  ? Icons[category.icon as keyof typeof Icons]
-                  : Icons.Tag) as unknown as React.ComponentType<{ className?: string }>;
-                
+                const IconComponent =
+                  (category.icon &&
+                  Icons[category.icon as keyof typeof Icons]
+                    ? Icons[category.icon as keyof typeof Icons]
+                    : Icons.Tag) as any;
+  
                 return (
-                  <Card key={category.id} className="hover:shadow-md transition-all group">
-                    <CardContent className="p-4 md:p-6">
+                  <Card
+                    key={category.id}
+                    className="hover:shadow-md transition-all group"
+                  >
+                    <CardContent className="p-4 md:p-5">
                       <div className="flex items-start justify-between mb-3 md:mb-4">
-                        <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-red-500/10 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                        <div className="
+                          h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl 
+                          bg-red-500/10 flex items-center justify-center 
+                          group-hover:scale-110 transition-transform
+                          flex-shrink-0
+                        ">
                           <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-red-600" />
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+  
+                        <div className="
+                          flex gap-1 md:opacity-0 group-hover:opacity-100 
+                          transition-opacity flex-shrink-0
+                        ">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 md:h-8 md:w-8"
                             onClick={() => handleEdit(category)}
                           >
-                            <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
+  
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 md:h-8 md:w-8 text-destructive hover:text-destructive"
+                            className="h-7 w-7 md:h-8 md:w-8 text-destructive"
                             onClick={() => handleDelete(category.id)}
                           >
-                            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                      <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">{category.name}</h3>
+  
+                      <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">
+                        {category.name}
+                      </h3>
                     </CardContent>
                   </Card>
                 );
@@ -233,48 +286,71 @@ export default function CategoriesPage() {
                 <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
                   <Tag className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <p className="text-muted-foreground mb-4">No expense categories yet</p>
+                <p className="text-muted-foreground mb-4">
+                  No expense categories yet
+                </p>
                 <Button onClick={() => setOpen(true)}>Create Category</Button>
               </CardContent>
             </Card>
           )}
         </TabsContent>
-
+  
+        {/* INCOME GRID */}
         <TabsContent value="income" className="space-y-4">
           {incomeCategories.length > 0 ? (
-            <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="
+              grid gap-4 md:gap-5
+              grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
+            ">
               {incomeCategories.map((category) => {
-                const IconComponent = (category.icon && Icons[category.icon as keyof typeof Icons]
-                  ? Icons[category.icon as keyof typeof Icons]
-                  : Icons.Tag) as unknown as React.ComponentType<{ className?: string }>;
-                
+                const IconComponent =
+                  (category.icon &&
+                  Icons[category.icon as keyof typeof Icons]
+                    ? Icons[category.icon as keyof typeof Icons]
+                    : Icons.Tag) as any;
+  
                 return (
-                  <Card key={category.id} className="hover:shadow-md transition-all group">
-                    <CardContent className="p-4 md:p-6">
+                  <Card
+                    key={category.id}
+                    className="hover:shadow-md transition-all group"
+                  >
+                    <CardContent className="p-4 md:p-5">
                       <div className="flex items-start justify-between mb-3 md:mb-4">
-                        <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                        <div className="
+                          h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl 
+                          bg-green-500/10 flex items-center justify-center 
+                          group-hover:scale-110 transition-transform
+                        ">
                           <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+  
+                        <div className="
+                          flex gap-1 md:opacity-0 group-hover:opacity-100 
+                          transition-opacity
+                        ">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 md:h-8 md:w-8"
                             onClick={() => handleEdit(category)}
                           >
-                            <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
+  
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 md:h-8 md:w-8 text-destructive hover:text-destructive"
+                            className="h-7 w-7 md:h-8 md:w-8 text-destructive"
                             onClick={() => handleDelete(category.id)}
                           >
-                            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                      <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">{category.name}</h3>
+  
+                      <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">
+                        {category.name}
+                      </h3>
                     </CardContent>
                   </Card>
                 );
@@ -287,10 +363,14 @@ export default function CategoriesPage() {
                   <Tag className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <p className="text-muted-foreground mb-4">No income categories yet</p>
-                <Button onClick={() => {
-                  setActiveTab("income");
-                  setOpen(true);
-                }}>Create Category</Button>
+                <Button
+                  onClick={() => {
+                    setActiveTab("income");
+                    setOpen(true);
+                  }}
+                >
+                  Create Category
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -298,4 +378,5 @@ export default function CategoriesPage() {
       </Tabs>
     </div>
   );
+  
 }

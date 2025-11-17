@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Wallet,
@@ -60,7 +67,9 @@ export default function DashboardLayout({
           <p className="text-sm font-medium mt-1">{session.user.name}</p>
         )}
         {session?.user?.email && (
-          <p className="text-xs text-muted-foreground mt-0.5">{session.user.email}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {session.user.email}
+          </p>
         )}
       </div>
       <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
@@ -110,15 +119,22 @@ export default function DashboardLayout({
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] p-0">
-                <SidebarContent />
-              </SheetContent>
-            </Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+
+                <SheetContent side="left" className="w-[300px] p-0">
+                  <SheetHeader>
+                    <VisuallyHidden>
+                      <SheetTitle>Navigation Menu</SheetTitle>
+                    </VisuallyHidden>
+                  </SheetHeader>
+
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </header>
@@ -136,4 +152,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-
