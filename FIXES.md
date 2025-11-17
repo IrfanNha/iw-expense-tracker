@@ -17,26 +17,29 @@
 - `src/middleware.ts`
 - `vercel.json`
 
-### 2. ✅ Error Build CSS & Turbopack
+### 2. ✅ Error Build CSS & Tailwind CSS v4
 **Masalah:** Error build terkait CSS import dengan Tailwind CSS v4 di production build di Vercel.
 
 **Error yang Terjadi:**
 ```
-./src/app/globals.css [Client Component Browser]
-./src/app/layout.tsx [Server Component]
+Error: Cannot find module '@tailwindcss/postcss'
 ```
 
+**Penyebab:**
+- `@tailwindcss/postcss` dan `tailwindcss` ada di `devDependencies`, sehingga tidak terinstall saat production build
+- PostCSS tidak bisa menemukan plugin yang diperlukan
+
 **Perbaikan:**
-- ✅ Menghapus Turbopack config (production build menggunakan webpack secara default)
-- ✅ Memperbarui PostCSS config dengan type annotation yang benar
+- ✅ Memindahkan `@tailwindcss/postcss` dan `tailwindcss` ke `dependencies` (diperlukan saat build)
+- ✅ Memperbarui PostCSS config dengan format object yang benar
 - ✅ Memastikan CSS diimport hanya di Server Component (layout.tsx)
-- ✅ Konfigurasi PostCSS sudah benar untuk Tailwind CSS v4
 - ✅ Menambahkan Node.js engine requirement di package.json
+- ✅ Membersihkan next.config.ts dari konfigurasi yang tidak diperlukan
 
 **File yang Diubah:**
-- `next.config.ts` - Menghapus turbopack config
-- `postcss.config.mjs` - Menambahkan type annotation
-- `package.json` - Menambahkan engines requirement
+- `package.json` - Memindahkan tailwindcss dan @tailwindcss/postcss ke dependencies
+- `postcss.config.mjs` - Memperbaiki format plugins (object bukan array)
+- `next.config.ts` - Membersihkan konfigurasi
 
 ### 3. ✅ Optimasi Production
 **Perbaikan:**

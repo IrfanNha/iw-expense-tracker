@@ -15,8 +15,6 @@ const nextConfig: NextConfig = {
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },
-  // Disable Turbopack for production builds to avoid CSS issues
-  // Production builds use webpack by default
 };
 
 export default nextConfig;
