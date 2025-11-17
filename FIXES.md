@@ -18,16 +18,25 @@
 - `vercel.json`
 
 ### 2. ✅ Error Build CSS & Turbopack
-**Masalah:** Error build terkait CSS import dengan Tailwind CSS v4 dan konflik Turbopack/Webpack di Next.js 16.
+**Masalah:** Error build terkait CSS import dengan Tailwind CSS v4 di production build di Vercel.
+
+**Error yang Terjadi:**
+```
+./src/app/globals.css [Client Component Browser]
+./src/app/layout.tsx [Server Component]
+```
 
 **Perbaikan:**
-- ✅ Menambahkan Turbopack configuration di `next.config.ts` (Next.js 16 menggunakan Turbopack secara default)
-- ✅ Menghapus webpack config yang menyebabkan konflik
+- ✅ Menghapus Turbopack config (production build menggunakan webpack secara default)
+- ✅ Memperbarui PostCSS config dengan type annotation yang benar
 - ✅ Memastikan CSS diimport hanya di Server Component (layout.tsx)
 - ✅ Konfigurasi PostCSS sudah benar untuk Tailwind CSS v4
+- ✅ Menambahkan Node.js engine requirement di package.json
 
 **File yang Diubah:**
-- `next.config.ts`
+- `next.config.ts` - Menghapus turbopack config
+- `postcss.config.mjs` - Menambahkan type annotation
+- `package.json` - Menambahkan engines requirement
 
 ### 3. ✅ Optimasi Production
 **Perbaikan:**
