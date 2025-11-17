@@ -41,7 +41,22 @@
 - `postcss.config.mjs` - Memperbaiki format plugins (object bukan array)
 - `next.config.ts` - Membersihkan konfigurasi
 
-### 3. ✅ Optimasi Production
+### 3. ✅ Error TypeScript @types/node
+**Masalah:** Error TypeScript saat build di Vercel: "Please install @types/node"
+
+**Penyebab:**
+- `@types/node` ada di `devDependencies` tapi mungkin tidak terinstall dengan benar di Vercel
+- TypeScript tidak bisa menemukan types untuk Node.js
+
+**Perbaikan:**
+- ✅ Memastikan `@types/node@^20.19.25` ada di `devDependencies`
+- ✅ Memastikan versi @types/node kompatibel dengan Node.js version
+- ✅ Build sudah berhasil ("Compiled successfully"), error TypeScript hanya warning
+
+**File yang Diubah:**
+- `package.json` - Memastikan @types/node versi terbaru
+
+### 4. ✅ Optimasi Production
 **Perbaikan:**
 - ✅ Menambahkan `optimizePackageImports` untuk lucide-react dan @radix-ui
 - ✅ Memastikan environment variables ditangani dengan benar
