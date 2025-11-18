@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/nextauth-config";
 import { prisma } from "@/lib/prisma";
 import { importFromCSV, type ImportData } from "@/lib/csv-utils";
 import { z } from "zod";
-import { AccountType } from "@prisma/client";
+import type { AccountType } from "@/generated/prisma/client";
 
 const importSchema = z.object({
   csvData: z.string(), // CSV text content
