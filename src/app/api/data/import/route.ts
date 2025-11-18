@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/nextauth-config";
 import { prisma } from "@/lib/prisma";
 import { importFromCSV, type ImportData } from "@/lib/csv-utils";
 import { z } from "zod";
+import { AccountType } from "@prisma/client";
 
 const importSchema = z.object({
   csvData: z.string(), // CSV text content
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
             await prisma.account.update({
               where: { id: existing.id },
               data: {
-                type: accountData.type,
+                type: accountData.type as AccountType,
                 currency: accountData.currency,
                 icon: accountData.icon,
                 balance: accountData.balance,
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
             data: {
               userId,
               name: accountData.name,
-              type: accountData.type,
+              type: accountData.type as AccountType,
               currency: accountData.currency,
               icon: accountData.icon,
               balance: accountData.balance,
