@@ -2,27 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/nextauth-config";
 import { prisma } from "@/lib/prisma";
-import {
-  decryptBackup,
-  base64ToArrayBuffer,
-  base64ToUint8Array,
-} from "@/lib/encryption";
-import {
-  backupDataSchema,
-  backupAccountSchema,
-  backupCategorySchema,
-  backupTransactionSchema,
-  backupTransferSchema,
-} from "@/lib/validators";
-import bcrypt from "bcryptjs";
+import { importFromCSV, type ImportData } from "@/lib/csv-utils";
 import { z } from "zod";
 
-// Ensure crypto.subtle is available (Node.js 18+ or Edge Runtime)
-export const runtime = "nodejs";
-
 const importSchema = z.object({
-  fileData: z.string(), // Base64 encoded backup file
-  pin: z.string().min(6, "PIN is required").max(10).regex(/^\d+$/, "PIN must contain only digits"),
+  csvData: z.string(), // CSV text content
   mode: z.enum(["append", "replace"]).default("append"),
   confirmed: z.boolean().default(false),
 });
@@ -45,74 +29,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify PIN
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { hashedPin: true },
-    });
-
-    if (!user || !user.hashedPin) {
-      return NextResponse.json(
-        { error: "User PIN not found" },
-        { status: 404 }
-      );
-    }
-
-    const isValid = await bcrypt.compare(parsed.data.pin, user.hashedPin);
-    if (!isValid) {
-      return NextResponse.json(
-        { error: "Invalid PIN" },
-        { status: 401 }
-      );
-    }
-
-    // Parse backup file
-    let backupFile: any;
+    // Parse CSV data
+    let importData: ImportData;
     try {
-      const fileText = atob(parsed.data.fileData);
-      backupFile = JSON.parse(fileText);
-    } catch (error) {
-      return NextResponse.json(
-        { error: "Invalid backup file format" },
-        { status: 400 }
-      );
-    }
-
-    // Decrypt backup
-    const encryptedData = base64ToArrayBuffer(backupFile.encryptedData);
-    const iv = base64ToUint8Array(backupFile.iv);
-    const signature = backupFile.signature;
-
-    let decryptedBackup;
-    try {
-      decryptedBackup = await decryptBackup(
-        encryptedData,
-        iv,
-        signature,
-        parsed.data.pin,
-        userId
-      );
+      importData = importFromCSV(parsed.data.csvData);
     } catch (error: any) {
       return NextResponse.json(
-        { error: error.message || "Failed to decrypt backup file" },
+        { error: error.message || "Failed to parse CSV file" },
         { status: 400 }
       );
     }
-
-    // Validate backup structure with Zod
-    const validatedBackup = backupDataSchema.parse(decryptedBackup);
 
     // If not confirmed, return preview
     if (!parsed.data.confirmed) {
       return NextResponse.json({
         preview: true,
         summary: {
-          accounts: validatedBackup.data.accounts.length,
-          categories: validatedBackup.data.categories.length,
-          transactions: validatedBackup.data.transactions.length,
-          transfers: validatedBackup.data.transfers.length,
-          version: validatedBackup.version,
-          timestamp: validatedBackup.timestamp,
+          accounts: importData.accounts.length,
+          categories: importData.categories.length,
+          transactions: importData.transactions.length,
+          transfers: importData.transfers.length,
         },
       });
     }
@@ -126,13 +62,12 @@ export async function POST(req: Request) {
     };
 
     // Import Accounts
-    for (const accountData of validatedBackup.data.accounts) {
+    for (const accountData of importData.accounts) {
       try {
-        const validated = backupAccountSchema.parse(accountData);
         const existing = await prisma.account.findFirst({
           where: {
             userId,
-            name: validated.name,
+            name: accountData.name,
           },
         });
 
@@ -141,10 +76,10 @@ export async function POST(req: Request) {
             await prisma.account.update({
               where: { id: existing.id },
               data: {
-                type: validated.type,
-                currency: validated.currency,
-                icon: validated.icon,
-                balance: validated.balance,
+                type: accountData.type,
+                currency: accountData.currency,
+                icon: accountData.icon,
+                balance: accountData.balance,
               },
             });
             results.accounts.updated++;
@@ -153,11 +88,11 @@ export async function POST(req: Request) {
           await prisma.account.create({
             data: {
               userId,
-              name: validated.name,
-              type: validated.type,
-              currency: validated.currency,
-              icon: validated.icon,
-              balance: validated.balance,
+              name: accountData.name,
+              type: accountData.type,
+              currency: accountData.currency,
+              icon: accountData.icon,
+              balance: accountData.balance,
             },
           });
           results.accounts.created++;
@@ -170,14 +105,13 @@ export async function POST(req: Request) {
     }
 
     // Import Categories
-    for (const categoryData of validatedBackup.data.categories) {
+    for (const categoryData of importData.categories) {
       try {
-        const validated = backupCategorySchema.parse(categoryData);
         const existing = await prisma.category.findFirst({
           where: {
             userId,
-            name: validated.name,
-            isIncome: validated.isIncome,
+            name: categoryData.name,
+            isIncome: categoryData.isIncome,
           },
         });
 
@@ -185,9 +119,9 @@ export async function POST(req: Request) {
           await prisma.category.create({
             data: {
               userId,
-              name: validated.name,
-              isIncome: validated.isIncome,
-              icon: validated.icon,
+              name: categoryData.name,
+              isIncome: categoryData.isIncome,
+              icon: categoryData.icon,
             },
           });
           results.categories.created++;
@@ -195,7 +129,7 @@ export async function POST(req: Request) {
           await prisma.category.update({
             where: { id: existing.id },
             data: {
-              icon: validated.icon,
+              icon: categoryData.icon,
             },
           });
           results.categories.updated++;
@@ -208,29 +142,28 @@ export async function POST(req: Request) {
     }
 
     // Import Transactions
-    for (const txData of validatedBackup.data.transactions) {
+    for (const txData of importData.transactions) {
       try {
-        const validated = backupTransactionSchema.parse(txData);
         const account = await prisma.account.findFirst({
           where: {
             userId,
-            name: validated.accountName,
+            name: txData.accountName,
           },
         });
 
         if (!account) {
           results.transactions.errors.push(
-            `Transaction: Account "${validated.accountName}" not found`
+            `Transaction: Account "${txData.accountName}" not found`
           );
           continue;
         }
 
         let categoryId: string | undefined;
-        if (validated.categoryName) {
+        if (txData.categoryName) {
           const category = await prisma.category.findFirst({
             where: {
               userId,
-              name: validated.categoryName,
+              name: txData.categoryName,
             },
           });
           categoryId = category?.id;
@@ -241,23 +174,23 @@ export async function POST(req: Request) {
             userId,
             accountId: account.id,
             categoryId,
-            amount: validated.amount,
-            type: validated.type,
-            note: validated.note,
-            occurredAt: new Date(validated.occurredAt),
+            amount: txData.amount,
+            type: txData.type,
+            note: txData.note,
+            occurredAt: new Date(txData.occurredAt),
           },
         });
 
         // Update account balance
-        if (validated.type === "INCOME") {
+        if (txData.type === "INCOME") {
           await prisma.account.update({
             where: { id: account.id },
-            data: { balance: { increment: validated.amount } },
+            data: { balance: { increment: txData.amount } },
           });
-        } else if (validated.type === "EXPENSE") {
+        } else if (txData.type === "EXPENSE") {
           await prisma.account.update({
             where: { id: account.id },
-            data: { balance: { decrement: validated.amount } },
+            data: { balance: { decrement: txData.amount } },
           });
         }
 
@@ -268,26 +201,25 @@ export async function POST(req: Request) {
     }
 
     // Import Transfers
-    for (const transferData of validatedBackup.data.transfers) {
+    for (const transferData of importData.transfers) {
       try {
-        const validated = backupTransferSchema.parse(transferData);
         const fromAccount = await prisma.account.findFirst({
           where: {
             userId,
-            name: validated.fromAccountName,
+            name: transferData.fromAccountName,
           },
         });
 
         const toAccount = await prisma.account.findFirst({
           where: {
             userId,
-            name: validated.toAccountName,
+            name: transferData.toAccountName,
           },
         });
 
         if (!fromAccount || !toAccount) {
           results.transfers.errors.push(
-            `Transfer: Account not found (from: ${validated.fromAccountName}, to: ${validated.toAccountName})`
+            `Transfer: Account not found (from: ${transferData.fromAccountName}, to: ${transferData.toAccountName})`
           );
           continue;
         }
@@ -305,9 +237,9 @@ export async function POST(req: Request) {
             userId,
             fromAccountId: fromAccount.id,
             toAccountId: toAccount.id,
-            amount: validated.amount,
-            note: validated.note,
-            createdAt: new Date(validated.createdAt),
+            amount: transferData.amount,
+            note: transferData.note,
+            createdAt: new Date(transferData.createdAt),
           },
         });
 
@@ -317,7 +249,7 @@ export async function POST(req: Request) {
             {
               userId,
               accountId: fromAccount.id,
-              amount: validated.amount,
+              amount: transferData.amount,
               type: "TRANSFER_DEBIT",
               occurredAt: transfer.createdAt,
               transferId: transfer.id,
@@ -325,7 +257,7 @@ export async function POST(req: Request) {
             {
               userId,
               accountId: toAccount.id,
-              amount: validated.amount,
+              amount: transferData.amount,
               type: "TRANSFER_CREDIT",
               occurredAt: transfer.createdAt,
               transferId: transfer.id,
@@ -336,12 +268,12 @@ export async function POST(req: Request) {
         // Update account balances
         await prisma.account.update({
           where: { id: fromAccount.id },
-          data: { balance: { decrement: validated.amount } },
+          data: { balance: { decrement: transferData.amount } },
         });
 
         await prisma.account.update({
           where: { id: toAccount.id },
-          data: { balance: { increment: validated.amount } },
+          data: { balance: { increment: transferData.amount } },
         });
 
         results.transfers.created++;

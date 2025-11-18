@@ -63,9 +63,74 @@ export interface ImportData {
 }
 
 /**
- * Convert array of objects to CSV string
+ * Sanitize value for CSV - ensures safe output
  */
-function arrayToCSV(data: any[], headers: string[]): string {
+function sanitizeCSVValue(value: any): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  
+  // Convert to string
+  const str = String(value);
+  
+  // Remove or replace problematic characters
+  const sanitized = str
+    .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, "") // Remove control characters
+    .trim();
+  
+  // Escape quotes and wrap in quotes if contains comma, newline, or quote
+  if (sanitized.includes(",") || sanitized.includes("\n") || sanitized.includes('"') || sanitized.includes("\r")) {
+    return `"${sanitized.replace(/"/g, '""')}"`;
+  }
+  
+  return sanitized;
+}
+
+/**
+ * Sanitize numeric value - returns empty string if invalid
+ */
+function sanitizeNumeric(value: any): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  
+  // Try to parse as number
+  const num = typeof value === "number" ? value : parseFloat(String(value));
+  
+  // Check if valid number
+  if (isNaN(num) || !isFinite(num)) {
+    return ""; // Return empty for invalid numbers
+  }
+  
+  // Ensure it's an integer (for cents)
+  const intValue = Math.round(num);
+  
+  return String(intValue);
+}
+
+/**
+ * Sanitize date value - returns empty string if invalid
+ */
+function sanitizeDate(value: any): string {
+  if (!value) {
+    return "";
+  }
+  
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return "";
+    }
+    return date.toISOString();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Convert array of objects to CSV string with sanitization
+ */
+function arrayToCSV(data: any[], headers: string[], sanitizers?: Record<string, (val: any) => string>): string {
   if (data.length === 0) {
     return headers.join(",") + "\n";
   }
@@ -75,12 +140,14 @@ function arrayToCSV(data: any[], headers: string[]): string {
     ...data.map((row) =>
       headers
         .map((header) => {
-          const value = row[header] ?? "";
-          // Escape quotes and wrap in quotes if contains comma, newline, or quote
-          if (typeof value === "string" && (value.includes(",") || value.includes("\n") || value.includes('"'))) {
-            return `"${value.replace(/"/g, '""')}"`;
+          const value = row[header];
+          const sanitizer = sanitizers?.[header];
+          
+          if (sanitizer) {
+            return sanitizer(value);
           }
-          return value;
+          
+          return sanitizeCSVValue(value);
         })
         .join(",")
     ),
@@ -140,7 +207,7 @@ function csvToArray(csv: string): any[] {
 }
 
 /**
- * Export data to CSV format
+ * Export data to CSV format with sanitization
  */
 export function exportToCSV(data: ExportData): string {
   const sections: string[] = [];
@@ -149,7 +216,13 @@ export function exportToCSV(data: ExportData): string {
   if (data.accounts.length > 0) {
     sections.push("=== ACCOUNTS ===");
     sections.push(
-      arrayToCSV(data.accounts, ["name", "type", "currency", "icon", "balance"])
+      arrayToCSV(
+        data.accounts,
+        ["name", "type", "currency", "icon", "balance"],
+        {
+          balance: sanitizeNumeric,
+        }
+      )
     );
     sections.push("");
   }
@@ -158,7 +231,13 @@ export function exportToCSV(data: ExportData): string {
   if (data.categories.length > 0) {
     sections.push("=== CATEGORIES ===");
     sections.push(
-      arrayToCSV(data.categories, ["name", "isIncome", "icon"])
+      arrayToCSV(
+        data.categories,
+        ["name", "isIncome", "icon"],
+        {
+          isIncome: (val) => val === true || val === "true" ? "true" : "false",
+        }
+      )
     );
     sections.push("");
   }
@@ -167,14 +246,22 @@ export function exportToCSV(data: ExportData): string {
   if (data.transactions.length > 0) {
     sections.push("=== TRANSACTIONS ===");
     sections.push(
-      arrayToCSV(data.transactions, [
-        "accountName",
-        "categoryName",
-        "amount",
-        "type",
-        "note",
-        "occurredAt",
-      ])
+      arrayToCSV(
+        data.transactions,
+        [
+          "accountName",
+          "categoryName",
+          "amount",
+          "type",
+          "note",
+          "occurredAt",
+        ],
+        {
+          amount: sanitizeNumeric,
+          type: (val) => val === "INCOME" || val === "EXPENSE" ? String(val) : "",
+          occurredAt: sanitizeDate,
+        }
+      )
     );
     sections.push("");
   }
@@ -183,13 +270,20 @@ export function exportToCSV(data: ExportData): string {
   if (data.transfers.length > 0) {
     sections.push("=== TRANSFERS ===");
     sections.push(
-      arrayToCSV(data.transfers, [
-        "fromAccountName",
-        "toAccountName",
-        "amount",
-        "note",
-        "createdAt",
-      ])
+      arrayToCSV(
+        data.transfers,
+        [
+          "fromAccountName",
+          "toAccountName",
+          "amount",
+          "note",
+          "createdAt",
+        ],
+        {
+          amount: sanitizeNumeric,
+          createdAt: sanitizeDate,
+        }
+      )
     );
   }
 
@@ -197,7 +291,80 @@ export function exportToCSV(data: ExportData): string {
 }
 
 /**
- * Import data from CSV format
+ * Sanitize and validate numeric value for import
+ */
+function parseSafeNumber(value: any, defaultValue: number = 0): number {
+  if (!value || value === "") {
+    return defaultValue;
+  }
+  
+  const cleaned = String(value).replace(/[^\d.-]/g, "");
+  if (!cleaned) {
+    return defaultValue;
+  }
+  
+  const num = parseFloat(cleaned);
+  if (isNaN(num) || !isFinite(num)) {
+    return defaultValue;
+  }
+  
+  // Ensure it's an integer (for cents)
+  return Math.round(num);
+}
+
+/**
+ * Sanitize and validate date value for import
+ */
+function parseSafeDate(value: any, defaultValue?: Date): string {
+  if (!value || value === "") {
+    return defaultValue ? defaultValue.toISOString() : new Date().toISOString();
+  }
+  
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return defaultValue ? defaultValue.toISOString() : new Date().toISOString();
+    }
+    return date.toISOString();
+  } catch {
+    return defaultValue ? defaultValue.toISOString() : new Date().toISOString();
+  }
+}
+
+/**
+ * Sanitize string value for import
+ */
+function parseSafeString(value: any, maxLength: number = 255): string {
+  if (!value) {
+    return "";
+  }
+  
+  const str = String(value)
+    .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, "") // Remove control characters
+    .trim();
+  
+  return str.slice(0, maxLength);
+}
+
+/**
+ * Validate transaction type
+ */
+function validateTransactionType(value: any): "INCOME" | "EXPENSE" {
+  const str = String(value).toUpperCase().trim();
+  return str === "INCOME" ? "INCOME" : "EXPENSE";
+}
+
+/**
+ * Validate account type
+ */
+function validateAccountType(value: any): string {
+  const validTypes = ["CASH", "BANK", "CARD", "E_WALLET", "OTHER"];
+  const str = String(value).toUpperCase().trim();
+  return validTypes.includes(str) ? str : "CASH";
+}
+
+/**
+ * Import data from CSV format with sanitization
  */
 export function importFromCSV(csv: string): ImportData {
   const sections = csv.split(/=== (\w+) ===/);
@@ -217,42 +384,79 @@ export function importFromCSV(csv: string): ImportData {
     try {
       switch (sectionName) {
         case "accounts":
-          result.accounts = csvToArray(sectionData).map((row) => ({
-            name: row.name || "",
-            type: row.type || "CASH",
-            currency: row.currency || "IDR",
-            icon: row.icon || undefined,
-            balance: row.balance ? parseInt(row.balance, 10) : 0,
-          }));
+          result.accounts = csvToArray(sectionData)
+            .map((row) => {
+              const name = parseSafeString(row.name, 100);
+              if (!name) return null; // Skip if name is empty
+              
+              return {
+                name,
+                type: validateAccountType(row.type),
+                currency: parseSafeString(row.currency || "IDR", 10).toUpperCase() || "IDR",
+                icon: row.icon ? parseSafeString(row.icon, 50) : undefined,
+                balance: parseSafeNumber(row.balance, 0),
+              };
+            })
+            .filter((acc): acc is NonNullable<typeof acc> => acc !== null);
           break;
 
         case "categories":
-          result.categories = csvToArray(sectionData).map((row) => ({
-            name: row.name || "",
-            isIncome: row.isIncome === "true" || row.isIncome === true,
-            icon: row.icon || undefined,
-          }));
+          result.categories = csvToArray(sectionData)
+            .map((row) => {
+              const name = parseSafeString(row.name, 100);
+              if (!name) return null; // Skip if name is empty
+              
+              return {
+                name,
+                isIncome: row.isIncome === "true" || row.isIncome === true || String(row.isIncome).toLowerCase() === "true",
+                icon: row.icon ? parseSafeString(row.icon, 50) : undefined,
+              };
+            })
+            .filter((cat): cat is NonNullable<typeof cat> => cat !== null);
           break;
 
         case "transactions":
-          result.transactions = csvToArray(sectionData).map((row) => ({
-            accountName: row.accountName || "",
-            categoryName: row.categoryName || undefined,
-            amount: parseInt(row.amount, 10) || 0,
-            type: row.type || "EXPENSE",
-            note: row.note || undefined,
-            occurredAt: row.occurredAt || new Date().toISOString(),
-          }));
+          result.transactions = csvToArray(sectionData)
+            .map((row) => {
+              const accountName = parseSafeString(row.accountName, 100);
+              if (!accountName) return null; // Skip if account name is empty
+              
+              const amount = parseSafeNumber(row.amount);
+              if (amount <= 0) return null; // Skip if amount is invalid
+              
+              return {
+                accountName,
+                categoryName: row.categoryName ? parseSafeString(row.categoryName, 100) : undefined,
+                amount,
+                type: validateTransactionType(row.type),
+                note: row.note ? parseSafeString(row.note, 500) : undefined,
+                occurredAt: parseSafeDate(row.occurredAt),
+              };
+            })
+            .filter((tx): tx is NonNullable<typeof tx> => tx !== null);
           break;
 
         case "transfers":
-          result.transfers = csvToArray(sectionData).map((row) => ({
-            fromAccountName: row.fromAccountName || "",
-            toAccountName: row.toAccountName || "",
-            amount: parseInt(row.amount, 10) || 0,
-            note: row.note || undefined,
-            createdAt: row.createdAt || new Date().toISOString(),
-          }));
+          result.transfers = csvToArray(sectionData)
+            .map((row) => {
+              const fromAccountName = parseSafeString(row.fromAccountName, 100);
+              const toAccountName = parseSafeString(row.toAccountName, 100);
+              
+              if (!fromAccountName || !toAccountName) return null; // Skip if account names are empty
+              if (fromAccountName === toAccountName) return null; // Skip if same account
+              
+              const amount = parseSafeNumber(row.amount);
+              if (amount <= 0) return null; // Skip if amount is invalid
+              
+              return {
+                fromAccountName,
+                toAccountName,
+                amount,
+                note: row.note ? parseSafeString(row.note, 500) : undefined,
+                createdAt: parseSafeDate(row.createdAt),
+              };
+            })
+            .filter((transfer): transfer is NonNullable<typeof transfer> => transfer !== null);
           break;
       }
     } catch (error) {

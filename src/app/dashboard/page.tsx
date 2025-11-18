@@ -33,6 +33,22 @@ import * as React from "react";
 import Link from "next/link";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 async function fetchMonthlyReport() {
   const res = await fetch("/api/reports/monthly");
@@ -58,6 +74,11 @@ export default function DashboardPage() {
     useTransactions({ limit: 1000 });
   const deleteTransaction = useDeleteTransaction();
   const [showGrouped, setShowGrouped] = React.useState(true);
+  const [calendarOpen, setCalendarOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [transactionToDelete, setTransactionToDelete] = React.useState<string | null>(null);
+  const [errorDialogOpen, setErrorDialogOpen] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string>("");
 
   const totalBalance =
     accounts?.reduce((sum, acc) => sum + acc.balance, 0) || 0;
@@ -132,7 +153,7 @@ export default function DashboardPage() {
 
     const start = getStartOfMonth(date);
     return start.toLocaleDateString("id-ID", {
-      month: "long",
+      month: "short",
       year: "numeric",
     });
   };
@@ -221,13 +242,22 @@ export default function DashboardPage() {
 
   const totalAmount = categoryData.reduce((sum, item) => sum + item.value, 0);
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this transaction?")) {
-      try {
-        await deleteTransaction.mutateAsync(id);
-      } catch (error: any) {
-        alert(error.message || "Failed to delete transaction");
-      }
+  const handleDelete = (id: string) => {
+    setTransactionToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!transactionToDelete) return;
+    try {
+      await deleteTransaction.mutateAsync(transactionToDelete);
+      setDeleteDialogOpen(false);
+      setTransactionToDelete(null);
+    } catch (error: any) {
+      setErrorMessage(error.message || "Failed to delete transaction");
+      setErrorDialogOpen(true);
+      setDeleteDialogOpen(false);
+      setTransactionToDelete(null);
     }
   };
 
@@ -237,13 +267,13 @@ export default function DashboardPage() {
         {/* Header & Total Balance */}
         <div className="flex items-start justify-between gap-3 md:gap-6">
           <div className="space-y-1 md:space-y-1.5">
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Total Balance
             </p>
             <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
               {formatCurrency(totalBalance)}
             </p>
-            <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm md:text-sm text-muted-foreground">
               All accounts
             </p>
           </div>
@@ -323,14 +353,14 @@ export default function DashboardPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-[10px] sm:text-xs md:h-9 md:px-4 md:text-sm"
+                  className="h-8 px-2 text-xs sm:text-sm md:h-9 md:px-4 md:text-sm"
                 >
                   Manage
                 </Button>
               </Link>
             </div>
             {accountsLoading ? (
-              <div className="text-center py-3 text-muted-foreground text-xs">
+              <div className="text-center py-3 text-muted-foreground text-sm">
                 Loading accounts...
               </div>
             ) : accounts && accounts.length > 0 ? (
@@ -346,23 +376,23 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={account.id}
-                      className="flex items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 md:px-4 md:py-4"
+                      className="flex items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2.5 md:px-4 md:py-4"
                     >
                       <div className="flex items-center gap-2 md:gap-3">
-                        <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-full bg-primary/10">
+                        <div className="flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-full bg-primary/10">
                           <IconComponent className="h-4 w-4 md:h-6 md:w-6 text-primary" />
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-xs sm:text-sm md:text-base font-medium">
+                          <span className="text-sm sm:text-base md:text-base font-medium">
                             {account.name}
                           </span>
-                          <span className="text-[10px] md:text-xs text-muted-foreground capitalize">
+                          <span className="text-xs md:text-xs text-muted-foreground capitalize">
                             {account.type.toLowerCase().replace("_", " ")}
                           </span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold">
+                        <p className="text-sm sm:text-base md:text-base lg:text-lg font-semibold">
                           {formatCurrency(account.balance, account.currency)}
                         </p>
                       </div>
@@ -372,11 +402,11 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="text-center py-3">
-                <p className="text-muted-foreground mb-2 text-xs">
+                <p className="text-muted-foreground mb-2 text-sm">
                   No accounts yet
                 </p>
                 <Link href="/dashboard/accounts">
-                  <Button size="sm" className="h-7 text-[10px]">
+                  <Button size="sm" className="h-8 text-xs">
                     Create Account
                   </Button>
                 </Link>
@@ -388,7 +418,7 @@ export default function DashboardPage() {
           <div className="space-y-3 md:space-y-5">
             {/* Chart Section */}
             <Card className="border rounded-lg">
-              <CardHeader className="px-3 py-2 md:px-6 md:py-4">
+              <CardHeader className="px-3 py-2.5 md:px-6 md:py-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-sm md:text-lg font-semibold">
@@ -398,7 +428,7 @@ export default function DashboardPage() {
                         ? "Expense by Category"
                         : "Income by Category"}
                     </CardTitle>
-                    <CardDescription className="text-[10px] md:text-sm">
+                    <CardDescription className="text-xs md:text-sm">
                       {formatDateRangeDisplay(selectedDate, period)}
                     </CardDescription>
                   </div>
@@ -406,7 +436,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
                 {transactionsLoading ? (
-                  <div className="text-center py-6 md:py-12 text-muted-foreground text-xs md:text-base">
+                  <div className="text-center py-6 md:py-12 text-muted-foreground text-sm md:text-base">
                     Loading...
                   </div>
                 ) : activeTab === "all" ? (
@@ -423,7 +453,7 @@ export default function DashboardPage() {
                     }`}
                   />
                 ) : (
-                  <div className="text-center py-6 md:py-12 text-muted-foreground text-xs md:text-base">
+                  <div className="text-center py-6 md:py-12 text-muted-foreground text-sm md:text-base">
                     No {activeTab} data for this period
                   </div>
                 )}
@@ -432,13 +462,13 @@ export default function DashboardPage() {
 
             {/* Transaction List */}
             <Card className="border rounded-lg">
-              <CardHeader className="px-3 py-2 md:px-6 md:py-4 space-y-2 md:space-y-4">
+              <CardHeader className="px-3 py-2.5 md:px-6 md:py-4 space-y-3 md:space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-sm md:text-lg font-semibold">
                       Transactions
                     </CardTitle>
-                    <CardDescription className="text-[10px] md:text-sm">
+                    <CardDescription className="text-xs md:text-sm">
                       View your {period === "day" ? "daily" : period} transactions
                     </CardDescription>
                   </div>
@@ -446,18 +476,48 @@ export default function DashboardPage() {
                     <Button
                       size="icon"
                       variant={showGrouped ? "secondary" : "ghost"}
-                      className="h-7 w-7 md:h-9 md:w-9"
+                      className="h-8 w-8 md:h-9 md:w-9"
                       onClick={() => setShowGrouped((prev) => !prev)}
                       title={showGrouped ? "Show individual" : "Show grouped"}
                     >
-                      <Receipt className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                      <Receipt className="h-4 w-4 md:h-4 md:w-4" />
                     </Button>
                   </div>
                 </div>
 
-                {/* Date Navigation + Period */}
-                <div className="flex items-center justify-between rounded-full border px-2 py-1.5 md:px-4 md:py-2.5 bg-muted/30">
-                  <div className="flex items-center gap-1.5 md:gap-3">
+                {/* Period Selector */}
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center gap-1 rounded-full bg-muted/60 p-1">
+                    <Button
+                      size="sm"
+                      variant={period === "day" ? "default" : "ghost"}
+                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-full"
+                      onClick={() => setPeriod("day")}
+                    >
+                      Day
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={period === "week" ? "default" : "ghost"}
+                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-full"
+                      onClick={() => setPeriod("week")}
+                    >
+                      Week
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={period === "month" ? "default" : "ghost"}
+                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-full"
+                      onClick={() => setPeriod("month")}
+                    >
+                      Month
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Date Navigation */}
+                <div className="flex items-center justify-center rounded-full border px-2 py-2 md:px-3 md:py-2.5 bg-muted/30">
+                  <div className="flex items-center gap-1.5 md:gap-2.5">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -477,22 +537,44 @@ export default function DashboardPage() {
                           )
                         )
                       }
-                      className="h-7 w-7 md:h-9 md:w-9"
+                      className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-background hover:bg-muted"
                     >
-                      <ChevronLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                      <ChevronLeft className="h-4 w-4 md:h-4 md:w-4" />
                     </Button>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] md:text-xs text-muted-foreground">
-                        {period === "day"
-                          ? "Today"
-                          : period === "week"
-                          ? "This week"
-                          : "This month"}
-                      </span>
-                      <span className="text-xs md:text-sm font-semibold">
-                        {formatDateRangeDisplay(selectedDate, period)}
-                      </span>
-                    </div>
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "flex flex-col items-center justify-center h-auto py-1.5 px-3 md:px-4 hover:bg-muted rounded-md min-w-[120px] md:min-w-[140px]"
+                          )}
+                        >
+                          <span className="text-xs md:text-sm text-muted-foreground">
+                            {period === "day"
+                              ? "Today"
+                              : period === "week"
+                              ? "This week"
+                              : "This month"}
+                          </span>
+                          <span className="text-sm md:text-base font-semibold">
+                            {formatDateRangeDisplay(selectedDate, period)}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="center">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={(date) => {
+                            if (date) {
+                              setSelectedDate(date);
+                              setCalendarOpen(false);
+                            }
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -512,35 +594,9 @@ export default function DashboardPage() {
                           )
                         )
                       }
-                      className="h-7 w-7 md:h-9 md:w-9"
+                      className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-background hover:bg-muted"
                     >
-                      <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-1 rounded-full bg-background p-0.5 md:p-1">
-                    <Button
-                      size="sm"
-                      variant={period === "day" ? "default" : "ghost"}
-                      className="h-6 px-2 text-[10px] md:h-8 md:px-3 md:text-xs rounded-full"
-                      onClick={() => setPeriod("day")}
-                    >
-                      Day
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={period === "week" ? "default" : "ghost"}
-                      className="h-6 px-2 text-[10px] md:h-8 md:px-3 md:text-xs rounded-full"
-                      onClick={() => setPeriod("week")}
-                    >
-                      Week
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={period === "month" ? "default" : "ghost"}
-                      className="h-6 px-2 text-[10px] md:h-8 md:px-3 md:text-xs rounded-full"
-                      onClick={() => setPeriod("month")}
-                    >
-                      Month
+                      <ChevronRight className="h-4 w-4 md:h-4 md:w-4" />
                     </Button>
                   </div>
                 </div>
@@ -552,40 +608,40 @@ export default function DashboardPage() {
                     setActiveTab(v as "all" | "income" | "expense");
                   }}
                 >
-                  <TabsList className="grid w-full grid-cols-3 h-8 md:h-10 rounded-full bg-muted/60">
+                  <TabsList className="grid w-full grid-cols-3 h-9 md:h-10 rounded-full bg-muted/60">
                     <TabsTrigger
                       value="all"
-                      className="text-[10px] sm:text-xs md:text-sm rounded-full data-[state=active]:bg-background"
+                      className="text-xs sm:text-sm md:text-sm rounded-full data-[state=active]:bg-background"
                     >
                       All
                     </TabsTrigger>
                     <TabsTrigger
                       value="expense"
-                      className="flex items-center gap-1 md:gap-1.5 text-[10px] sm:text-xs md:text-sm rounded-full data-[state=active]:bg-background"
+                      className="flex items-center gap-1 md:gap-1.5 text-xs sm:text-sm md:text-sm rounded-full data-[state=active]:bg-background"
                     >
-                      <TrendingDown className="h-3 w-3 md:h-4 md:w-4" />
+                      <TrendingDown className="h-3.5 w-3.5 md:h-4 md:w-4" />
                       <span>Exp</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="income"
-                      className="flex items-center gap-1 md:gap-1.5 text-[10px] sm:text-xs md:text-sm rounded-full data-[state=active]:bg-background"
+                      className="flex items-center gap-1 md:gap-1.5 text-xs sm:text-sm md:text-sm rounded-full data-[state=active]:bg-background"
                     >
-                      <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                      <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
                       <span>Inc</span>
                     </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value={activeTab} className="mt-3 md:mt-4">
                     {transactionsLoading ? (
-                      <div className="text-center py-6 md:py-12 text-muted-foreground text-xs md:text-base">
+                      <div className="text-center py-6 md:py-12 text-muted-foreground text-sm md:text-base">
                         Loading transactions...
                       </div>
                     ) : filteredTransactions.length === 0 ? (
                       <div className="text-center py-6 md:py-12">
-                        <p className="text-muted-foreground mb-1 text-xs md:text-base">
+                        <p className="text-muted-foreground mb-1 text-sm md:text-base">
                           No transactions found
                         </p>
-                        <p className="text-[10px] md:text-sm text-muted-foreground">
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           {activeTab === "all"
                             ? `No transactions in this ${period}`
                             : `No ${activeTab} transactions in this ${period}`}
@@ -638,10 +694,10 @@ export default function DashboardPage() {
                               return (
                                 <div
                                   key={key}
-                                  className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 md:px-4 md:py-3"
+                                  className="flex items-center justify-between rounded-lg border bg-card px-3 py-2.5 md:px-4 md:py-3"
                                 >
-                                  <div className="flex items-center gap-2 md:gap-3">
-                                    <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-muted">
+                                  <div className="flex items-center gap-2.5 md:gap-3">
+                                    <div className="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-muted">
                                       <IconComponent
                                         className={cn(
                                           "h-4 w-4 md:h-5 md:w-5",
@@ -652,10 +708,10 @@ export default function DashboardPage() {
                                       />
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-xs md:text-sm font-semibold">
+                                      <span className="text-sm md:text-sm font-semibold">
                                         {group.label}
                                       </span>
-                                      <span className="text-[10px] md:text-xs text-muted-foreground">
+                                      <span className="text-xs md:text-xs text-muted-foreground">
                                         {group.items.length} transaction
                                         {group.items.length > 1 ? "s" : ""}
                                       </span>
@@ -664,7 +720,7 @@ export default function DashboardPage() {
                                   <div className="text-right">
                                     <p
                                       className={cn(
-                                        "text-xs sm:text-sm md:text-base lg:text-lg font-bold",
+                                        "text-sm sm:text-base md:text-base lg:text-lg font-bold",
                                         isPositive
                                           ? "text-green-600"
                                           : "text-red-600"
@@ -698,12 +754,12 @@ export default function DashboardPage() {
                               return (
                                 <div
                                   key={transaction.id}
-                                  className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 md:px-4 md:py-3"
+                                  className="flex items-center justify-between rounded-lg border bg-card px-3 py-2.5 md:px-4 md:py-3"
                                 >
-                                  <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                                  <div className="flex items-center gap-2.5 md:gap-3 flex-1 min-w-0">
                                     <div
                                       className={cn(
-                                        "flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full",
+                                        "flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full",
                                         isIncome
                                           ? "bg-green-500/10 text-green-600"
                                           : "bg-red-500/10 text-red-600"
@@ -712,16 +768,16 @@ export default function DashboardPage() {
                                       <CategoryIcon className="h-4 w-4 md:h-5 md:w-5" />
                                     </div>
                                     <div className="flex flex-col min-w-0">
-                                      <span className="text-xs md:text-sm font-semibold truncate">
+                                      <span className="text-sm md:text-sm font-semibold truncate">
                                         {transaction.note ||
                                           transaction.category?.name ||
                                           "Daily Spend"}
                                       </span>
-                                      <span className="text-[10px] md:text-xs text-muted-foreground truncate">
+                                      <span className="text-xs md:text-xs text-muted-foreground truncate">
                                         {transaction.category?.name || "Other"}{" "}
                                         — {transaction.account?.name}
                                       </span>
-                                      <span className="text-[10px] md:text-xs text-muted-foreground">
+                                      <span className="text-xs md:text-xs text-muted-foreground">
                                         {new Date(
                                           transaction.occurredAt
                                         ).toLocaleTimeString("id-ID", {
@@ -734,7 +790,7 @@ export default function DashboardPage() {
                                   <div className="flex flex-col items-end gap-1 flex-shrink-0 pl-2 md:pl-4">
                                     <p
                                       className={cn(
-                                        "text-xs sm:text-sm md:text-base lg:text-lg font-bold",
+                                        "text-sm sm:text-base md:text-base lg:text-lg font-bold",
                                         isIncome
                                           ? "text-green-600"
                                           : "text-red-600"
@@ -753,9 +809,9 @@ export default function DashboardPage() {
                                         onClick={() =>
                                           handleDelete(transaction.id)
                                         }
-                                        className="h-6 w-6 md:h-8 md:w-8"
+                                        className="h-7 w-7 md:h-8 md:w-8"
                                       >
-                                        <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                                        <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                       </Button>
                                     </div>
                                   </div>
@@ -782,6 +838,35 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this transaction? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Dialog */}
+      <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Error</AlertDialogTitle>
+            <AlertDialogDescription>{errorMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setErrorDialogOpen(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

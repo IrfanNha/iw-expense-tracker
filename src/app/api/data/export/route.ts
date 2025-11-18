@@ -2,20 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/nextauth-config";
 import { prisma } from "@/lib/prisma";
-import {
-  encryptBackup,
-  arrayBufferToBase64,
-  uint8ArrayToBase64,
-} from "@/lib/encryption";
-import bcrypt from "bcryptjs";
-import { z } from "zod";
-
-// Ensure crypto.subtle is available (Node.js 18+ or Edge Runtime)
-export const runtime = "nodejs";
-
-const exportSchema = z.object({
-  pin: z.string().min(6, "PIN is required").max(10).regex(/^\d+$/, "PIN must contain only digits"),
-});
+import { exportToCSV, type ExportData } from "@/lib/csv-utils";
 
 export async function POST(req: Request) {
   try {
@@ -25,36 +12,6 @@ export async function POST(req: Request) {
     }
 
     const userId = session.user.id;
-    const json = await req.json();
-    const parsed = exportSchema.safeParse(json);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Invalid PIN format", details: parsed.error.issues },
-        { status: 400 }
-      );
-    }
-
-    // Verify PIN
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { hashedPin: true },
-    });
-
-    if (!user || !user.hashedPin) {
-      return NextResponse.json(
-        { error: "User PIN not found" },
-        { status: 404 }
-      );
-    }
-
-    const isValid = await bcrypt.compare(parsed.data.pin, user.hashedPin);
-    if (!isValid) {
-      return NextResponse.json(
-        { error: "Invalid PIN" },
-        { status: 401 }
-      );
-    }
 
     // Fetch all user data
     const [accounts, categories, transactions, transfers] = await Promise.all([
@@ -84,65 +41,50 @@ export async function POST(req: Request) {
       }),
     ]);
 
-    // Format data for export
-    const exportData = {
+    // Format data for export with sanitization
+    const exportData: ExportData = {
       accounts: accounts.map((acc) => ({
-        name: acc.name,
-        type: acc.type,
-        currency: acc.currency,
-        icon: acc.icon,
-        balance: acc.balance,
+        name: acc.name || "",
+        type: acc.type || "CASH",
+        currency: acc.currency || "IDR",
+        icon: acc.icon || null,
+        balance: typeof acc.balance === "number" && isFinite(acc.balance) ? acc.balance : 0,
       })),
       categories: categories.map((cat) => ({
-        name: cat.name,
-        isIncome: cat.isIncome,
-        icon: cat.icon,
+        name: cat.name || "",
+        isIncome: Boolean(cat.isIncome),
+        icon: cat.icon || null,
       })),
       transactions: transactions
         .filter((tx) => tx.type === "INCOME" || tx.type === "EXPENSE")
         .map((tx) => ({
-          accountName: tx.account.name,
+          accountName: tx.account?.name || "",
           categoryName: tx.category?.name || null,
-          amount: tx.amount,
-          type: tx.type,
-          note: tx.note,
-          occurredAt: tx.occurredAt.toISOString(),
-        })),
+          amount: typeof tx.amount === "number" && isFinite(tx.amount) && tx.amount > 0 ? tx.amount : 0,
+          type: tx.type === "INCOME" || tx.type === "EXPENSE" ? tx.type : "EXPENSE",
+          note: tx.note || null,
+          occurredAt: tx.occurredAt ? new Date(tx.occurredAt).toISOString() : new Date().toISOString(),
+        }))
+        .filter((tx) => tx.accountName && tx.amount > 0), // Filter out invalid transactions
       transfers: transfers.map((transfer) => ({
-        fromAccountName: transfer.fromAccount.name,
-        toAccountName: transfer.toAccount.name,
-        amount: transfer.amount,
-        note: transfer.note,
-        createdAt: transfer.createdAt.toISOString(),
-      })),
+        fromAccountName: transfer.fromAccount?.name || "",
+        toAccountName: transfer.toAccount?.name || "",
+        amount: typeof transfer.amount === "number" && isFinite(transfer.amount) && transfer.amount > 0 ? transfer.amount : 0,
+        note: transfer.note || null,
+        createdAt: transfer.createdAt ? new Date(transfer.createdAt).toISOString() : new Date().toISOString(),
+      }))
+        .filter((t) => t.fromAccountName && t.toAccountName && t.amount > 0), // Filter out invalid transfers
     };
 
-    // Encrypt data
-    const { encrypted, iv, signature } = await encryptBackup(
-      exportData,
-      parsed.data.pin,
-      userId
-    );
+    // Convert to CSV
+    const csvContent = exportToCSV(exportData);
 
-    // Create backup file structure (encrypted)
-    const backupFile = {
-      version: "1.0.0",
-      timestamp: new Date().toISOString(),
-      encryptedData: arrayBufferToBase64(encrypted),
-      iv: uint8ArrayToBase64(iv),
-      signature,
-    };
-
-    // Convert to binary format
-    const backupJson = JSON.stringify(backupFile);
-    const backupBuffer = new TextEncoder().encode(backupJson);
-
-    // Return encrypted file
-    return new NextResponse(backupBuffer, {
+    // Return CSV file
+    return new NextResponse(csvContent, {
       status: 200,
       headers: {
-        "Content-Type": "application/octet-stream",
-        "Content-Disposition": `attachment; filename="backup-${new Date().toISOString().split("T")[0]}.enc"`,
+        "Content-Type": "text/csv;charset=utf-8",
+        "Content-Disposition": `attachment; filename="backup-${new Date().toISOString().split("T")[0]}.csv"`,
       },
     });
   } catch (error: any) {

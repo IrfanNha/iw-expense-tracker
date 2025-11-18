@@ -12,9 +12,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { updateNameSchema, updatePinSchema } from "@/lib/validators";
-import { User, Lock, Eye, EyeOff, Download, Upload, Database, Shield, CheckCircle2, AlertCircle } from "lucide-react";
+import { User, Lock, Eye, EyeOff, Download, Upload, Database, Shield, CheckCircle2, AlertCircle, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PasswordInput } from "@/components/ui/password-input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const nameFormSchema = updateNameSchema;
 const pinFormSchema = updatePinSchema;
@@ -29,6 +39,10 @@ export default function SettingsPage() {
   const [showCurrentPin, setShowCurrentPin] = useState(false);
   const [showNewPin, setShowNewPin] = useState(false);
   const [showConfirmPin, setShowConfirmPin] = useState(false);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const nameForm = useForm<NameFormData>({
     resolver: zodResolver(nameFormSchema),
@@ -48,19 +62,23 @@ export default function SettingsPage() {
   const onNameSubmit = async (data: NameFormData) => {
     try {
       await updateName.mutateAsync(data);
-      alert("Name updated successfully!");
+      setSuccessMessage("Name updated successfully!");
+      setSuccessDialogOpen(true);
     } catch (error: any) {
-      alert(error.message || "Failed to update name");
+      setErrorMessage(error.message || "Failed to update name");
+      setErrorDialogOpen(true);
     }
   };
 
   const onPinSubmit = async (data: PinFormData) => {
     try {
       await updatePin.mutateAsync(data);
-      alert("PIN updated successfully!");
+      setSuccessMessage("PIN updated successfully!");
+      setSuccessDialogOpen(true);
       pinForm.reset();
     } catch (error: any) {
-      alert(error.message || "Failed to update PIN");
+      setErrorMessage(error.message || "Failed to update PIN");
+      setErrorDialogOpen(true);
     }
   };
 
@@ -220,6 +238,32 @@ export default function SettingsPage() {
           <DataManagementTab />
         </TabsContent>
       </Tabs>
+
+      {/* Success Dialog */}
+      <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Success</AlertDialogTitle>
+            <AlertDialogDescription>{successMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setSuccessDialogOpen(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Dialog */}
+      <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Error</AlertDialogTitle>
+            <AlertDialogDescription>{errorMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setErrorDialogOpen(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -232,40 +276,24 @@ function DataManagementTab() {
   const [importResult, setImportResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Export PIN dialog
-  const [showExportPinDialog, setShowExportPinDialog] = useState(false);
-  const [exportPin, setExportPin] = useState("");
-  const [exportPinError, setExportPinError] = useState<string | null>(null);
-  
-  // Import PIN dialog
-  const [showImportPinDialog, setShowImportPinDialog] = useState(false);
-  const [importPin, setImportPin] = useState("");
-  const [importPinError, setImportPinError] = useState<string | null>(null);
-  
   // Preview dialog
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
-
-  const handleExportClick = () => {
-    setExportPin("");
-    setExportPinError(null);
-    setShowExportPinDialog(true);
-  };
+  
+  // Clear all data
+  const [isClearing, setIsClearing] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [showClearConfirmDialog, setShowClearConfirmDialog] = useState(false);
+  const [confirmDeleteText, setConfirmDeleteText] = useState("");
 
   const handleExport = async () => {
-    if (!exportPin || exportPin.length < 6) {
-      setExportPinError("PIN must be at least 6 digits");
-      return;
-    }
-
     try {
       setIsExporting(true);
-      setExportPinError(null);
+      setError(null);
 
       const response = await fetch("/api/data/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: exportPin }),
       });
 
       if (!response.ok) {
@@ -278,16 +306,13 @@ function DataManagementTab() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `backup-${new Date().toISOString().split("T")[0]}.enc`;
+      link.download = `backup-${new Date().toISOString().split("T")[0]}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
-      setShowExportPinDialog(false);
-      setExportPin("");
     } catch (err: any) {
-      setExportPinError(err.message || "Failed to export data");
+      setError(err.message || "Failed to export data");
     } finally {
       setIsExporting(false);
     }
@@ -296,8 +321,8 @@ function DataManagementTab() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.name.endsWith(".enc")) {
-        setError("Please select a .enc backup file");
+      if (!file.name.endsWith(".csv")) {
+        setError("Please select a .csv backup file");
         return;
       }
       setImportFile(file);
@@ -312,29 +337,19 @@ function DataManagementTab() {
       return;
     }
 
-    if (!importPin || importPin.length < 6) {
-      setImportPinError("PIN must be at least 6 digits");
-      return;
-    }
-
     try {
       setIsImporting(true);
-      setImportPinError(null);
       setError(null);
 
-      // Read file as base64
-      const arrayBuffer = await importFile.arrayBuffer();
-      const base64 = btoa(
-        String.fromCharCode(...new Uint8Array(arrayBuffer))
-      );
+      // Read file as text (CSV)
+      const csvText = await importFile.text();
 
       // First, get preview
       const previewResponse = await fetch("/api/data/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fileData: base64,
-          pin: importPin,
+          csvData: csvText,
           mode: importMode,
           confirmed: false,
         }),
@@ -348,17 +363,16 @@ function DataManagementTab() {
 
       // Show preview
       setPreviewData(previewResult.summary);
-      setShowImportPinDialog(false);
       setShowPreviewDialog(true);
     } catch (err: any) {
-      setImportPinError(err.message || "Failed to preview import data");
+      setError(err.message || "Failed to preview import data");
     } finally {
       setIsImporting(false);
     }
   };
 
   const handleConfirmImport = async () => {
-    if (!importFile || !importPin) {
+    if (!importFile) {
       return;
     }
 
@@ -366,18 +380,14 @@ function DataManagementTab() {
       setIsImporting(true);
       setError(null);
 
-      // Read file as base64
-      const arrayBuffer = await importFile.arrayBuffer();
-      const base64 = btoa(
-        String.fromCharCode(...new Uint8Array(arrayBuffer))
-      );
+      // Read file as text (CSV)
+      const csvText = await importFile.text();
 
       const response = await fetch("/api/data/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fileData: base64,
-          pin: importPin,
+          csvData: csvText,
           mode: importMode,
           confirmed: true,
         }),
@@ -391,7 +401,6 @@ function DataManagementTab() {
 
       setImportResult(result);
       setImportFile(null);
-      setImportPin("");
       setShowPreviewDialog(false);
       
       // Reset file input
@@ -407,6 +416,37 @@ function DataManagementTab() {
       setShowPreviewDialog(false);
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const handleClearAllData = async () => {
+    try {
+      setIsClearing(true);
+      setError(null);
+
+      const response = await fetch("/api/data/clear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to clear data");
+      }
+
+      setShowClearConfirmDialog(false);
+      setShowClearDialog(false);
+      
+      // Refresh page after clearing
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err: any) {
+      setError(err.message || "Failed to clear data");
+      setShowClearConfirmDialog(false);
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -437,12 +477,12 @@ function DataManagementTab() {
             <div className="mt-3 pt-3 border-t flex items-start gap-2">
               <Shield className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Your data will be encrypted with AES-256-GCM using your PIN. The file is protected with HMAC signature to prevent tampering.
+                Your data will be exported as CSV format. All data is sanitized to ensure safe export. Invalid values will be filtered out automatically.
               </p>
             </div>
           </div>
           <Button
-            onClick={handleExportClick}
+            onClick={handleExport}
             disabled={isExporting}
             className="w-full sm:w-auto"
           >
@@ -454,62 +494,10 @@ function DataManagementTab() {
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Export Encrypted Backup
+                Export CSV Backup
               </>
             )}
           </Button>
-          
-          {/* Export PIN Dialog */}
-          <Dialog open={showExportPinDialog} onOpenChange={setShowExportPinDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Enter PIN to Export
-                </DialogTitle>
-                <DialogDescription>
-                  Enter your PIN to encrypt and export your data. Your PIN is required to decrypt the backup file later.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="export-pin">PIN</Label>
-                  <PasswordInput
-                    id="export-pin"
-                    value={exportPin}
-                    onChange={(e) => {
-                      setExportPin(e.target.value);
-                      setExportPinError(null);
-                    }}
-                    placeholder="Enter your PIN"
-                    maxLength={10}
-                    autoFocus
-                  />
-                  {exportPinError && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {exportPinError}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowExportPinDialog(false);
-                    setExportPin("");
-                    setExportPinError(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleExport} disabled={isExporting || !exportPin}>
-                  {isExporting ? "Exporting..." : "Export"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </CardContent>
       </Card>
 
@@ -521,7 +509,7 @@ function DataManagementTab() {
             Import Data
           </CardTitle>
           <CardDescription>
-            Import data from a previously exported encrypted backup file (.enc). You'll need to enter your PIN to decrypt the file.
+            Import data from a previously exported CSV backup file (.csv). Invalid data will be automatically filtered out.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -554,11 +542,11 @@ function DataManagementTab() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="import-file">Select Backup File (.enc)</Label>
+            <Label htmlFor="import-file">Select Backup File (.csv)</Label>
             <Input
               id="import-file"
               type="file"
-              accept=".enc,application/octet-stream"
+              accept=".csv,text/csv"
               onChange={handleFileSelect}
               disabled={isImporting}
             />
@@ -571,70 +559,23 @@ function DataManagementTab() {
           
           {importFile && (
             <Button
-              onClick={() => {
-                setImportPin("");
-                setImportPinError(null);
-                setShowImportPinDialog(true);
-              }}
+              onClick={handleImportClick}
               disabled={isImporting}
               className="w-full sm:w-auto"
             >
-              <Shield className="mr-2 h-4 w-4" />
-              Enter PIN to Preview
+              {isImporting ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Preview Import
+                </>
+              )}
             </Button>
           )}
-          
-          {/* Import PIN Dialog */}
-          <Dialog open={showImportPinDialog} onOpenChange={setShowImportPinDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Enter PIN to Decrypt
-                </DialogTitle>
-                <DialogDescription>
-                  Enter your PIN to decrypt and preview the backup file before importing.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="import-pin">PIN</Label>
-                  <PasswordInput
-                    id="import-pin"
-                    value={importPin}
-                    onChange={(e) => {
-                      setImportPin(e.target.value);
-                      setImportPinError(null);
-                    }}
-                    placeholder="Enter your PIN"
-                    maxLength={10}
-                    autoFocus
-                  />
-                  {importPinError && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {importPinError}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowImportPinDialog(false);
-                    setImportPin("");
-                    setImportPinError(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleImportClick} disabled={isImporting || !importPin}>
-                  {isImporting ? "Decrypting..." : "Preview Import"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
           
           {/* Preview Dialog */}
           <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
@@ -722,8 +663,7 @@ function DataManagementTab() {
               ⚠️ Important Notes:
             </p>
             <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1 list-disc list-inside">
-              <li>Only encrypted backup files (.enc) from this application are supported</li>
-              <li>You must use the same PIN that was used to create the backup</li>
+              <li>Only CSV backup files (.csv) from this application are supported</li>
               <li>Account names must match exactly for transactions and transfers</li>
               <li>Importing will update account balances automatically</li>
               <li>Backup your current data before importing in replace mode</li>
@@ -731,6 +671,167 @@ function DataManagementTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="h-5 w-5" />
+            Danger Zone
+          </CardTitle>
+          <CardDescription>
+            Irreversible and destructive actions. Use with extreme caution.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-destructive mb-1">
+                  Clear All Data
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Permanently delete all your accounts, categories, transactions, and transfers. 
+                  This action cannot be undone. Make sure you have exported your data before proceeding.
+                </p>
+                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside mb-3">
+                  <li>All accounts will be deleted</li>
+                  <li>All categories will be deleted</li>
+                  <li>All transactions will be deleted</li>
+                  <li>All transfers will be deleted</li>
+                </ul>
+                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  ⚠️ This action is permanent and cannot be reversed!
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => setShowClearDialog(true)}
+                disabled={isClearing}
+                className="flex-shrink-0"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Clear All Data
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Clear All Data - First Confirmation Dialog */}
+      <AlertDialog 
+        open={showClearDialog} 
+        onOpenChange={(open) => {
+          setShowClearDialog(open);
+          if (!open) {
+            setConfirmDeleteText("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Clear All Data?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                You are about to permanently delete <strong>ALL</strong> your data:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>All accounts</li>
+                <li>All categories</li>
+                <li>All transactions</li>
+                <li>All transfers</li>
+              </ul>
+              <p className="font-semibold text-destructive mt-3">
+                This action cannot be undone!
+              </p>
+              <p className="text-sm mt-2">
+                Make sure you have exported your data before proceeding.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowClearDialog(false);
+                setShowClearConfirmDialog(true);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              I understand, continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear All Data - Final Confirmation Dialog */}
+      <AlertDialog 
+        open={showClearConfirmDialog} 
+        onOpenChange={(open) => {
+          setShowClearConfirmDialog(open);
+          if (!open) {
+            setConfirmDeleteText("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Final Confirmation Required
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p className="font-semibold">
+                Are you absolutely sure you want to delete all your data?
+              </p>
+              <p className="text-sm">
+                This is your last chance to cancel. Once confirmed, all your data will be permanently deleted and cannot be recovered.
+              </p>
+              <p className="text-xs text-muted-foreground mt-3">
+                Type <strong>"DELETE"</strong> in the input below to confirm.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              id="confirm-delete"
+              placeholder="Type DELETE to confirm"
+              className="font-mono"
+              value={confirmDeleteText}
+              onChange={(e) => setConfirmDeleteText(e.target.value)}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setConfirmDeleteText("");
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearAllData}
+              disabled={isClearing || confirmDeleteText !== "DELETE"}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isClearing ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete All Data
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

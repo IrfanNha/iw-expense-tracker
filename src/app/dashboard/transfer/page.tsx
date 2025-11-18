@@ -9,18 +9,41 @@ import { formatCurrency } from "@/lib/money";
 import { Trash2, ArrowRight, ArrowLeftRight, Plus } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function TransferPage() {
   const { data: transfers, isLoading } = useTransfers();
   const deleteTransfer = useDeleteTransfer();
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [transferToDelete, setTransferToDelete] = React.useState<string | null>(null);
+  const [errorDialogOpen, setErrorDialogOpen] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string>("");
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this transfer? This will revert the account balances.")) {
-      try {
-        await deleteTransfer.mutateAsync(id);
-      } catch (error: any) {
-        alert(error.message || "Failed to delete transfer");
-      }
+  const handleDelete = (id: string) => {
+    setTransferToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!transferToDelete) return;
+    try {
+      await deleteTransfer.mutateAsync(transferToDelete);
+      setDeleteDialogOpen(false);
+      setTransferToDelete(null);
+    } catch (error: any) {
+      setErrorMessage(error.message || "Failed to delete transfer");
+      setErrorDialogOpen(true);
+      setDeleteDialogOpen(false);
+      setTransferToDelete(null);
     }
   };
 
@@ -102,7 +125,7 @@ export default function TransferPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 md:h-8 md:w-8 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            className="h-7 w-7 md:h-8 md:w-8 md:opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                             onClick={() => handleDelete(transfer.id)}
                           >
                             <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
@@ -171,6 +194,35 @@ export default function TransferPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transfer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this transfer? This will revert the account balances. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Dialog */}
+      <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Error</AlertDialogTitle>
+            <AlertDialogDescription>{errorMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setErrorDialogOpen(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

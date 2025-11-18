@@ -18,10 +18,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AccountSelect } from "@/components/forms/AccountSelect";
 import { AmountInput } from "@/components/forms/AmountInput";
-import { useCreateTransaction } from "@/hooks/useTransactions";
+import { useCreateTransaction, useUpdateTransaction, type Transaction } from "@/hooks/useTransactions";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useCategories } from "@/hooks/useCategories";
-import { parseInputToCents } from "@/lib/money";
+import { parseInputToCents, formatNumber } from "@/lib/money";
 import { transactionSchema } from "@/lib/validators";
 import { Plus, TrendingUp, TrendingDown } from "lucide-react";
 import * as Icons from "lucide-react";
@@ -35,34 +35,70 @@ type FormData = z.infer<typeof formSchema> & { amount: string };
 
 interface TransactionFormProps {
   trigger?: React.ReactNode;
+  transaction?: Transaction | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export function TransactionForm({ trigger, onSuccess }: TransactionFormProps) {
-  const [open, setOpen] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<"income" | "expense">("expense");
+export function TransactionForm({ 
+  trigger, 
+  transaction, 
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  onSuccess 
+}: TransactionFormProps) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const isEditMode = !!transaction;
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
+  const [activeTab, setActiveTab] = React.useState<"income" | "expense">(
+    transaction?.type === "INCOME" ? "income" : "expense"
+  );
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const createTransaction = useCreateTransaction();
+  const updateTransaction = useUpdateTransaction();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      accountId: "",
-      categoryId: "",
-      amount: "",
-      type: "EXPENSE",
-      note: "",
-      occurredAt: new Date().toISOString().split("T")[0],
+      accountId: transaction?.accountId || "",
+      categoryId: transaction?.categoryId || "",
+      amount: transaction ? formatNumber(transaction.amount) : "",
+      type: (transaction?.type === "INCOME" || transaction?.type === "EXPENSE") 
+        ? transaction.type 
+        : "EXPENSE",
+      note: transaction?.note || "",
+      occurredAt: transaction
+        ? new Date(transaction.occurredAt).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
     },
   });
 
   React.useEffect(() => {
-    if (!open) {
-      form.reset();
+    if (transaction && open && (transaction.type === "INCOME" || transaction.type === "EXPENSE")) {
+      form.reset({
+        accountId: transaction.accountId,
+        categoryId: transaction.categoryId || "",
+        amount: formatNumber(transaction.amount),
+        type: transaction.type,
+        note: transaction.note || "",
+        occurredAt: new Date(transaction.occurredAt).toISOString().split("T")[0],
+      });
+      setActiveTab(transaction.type === "INCOME" ? "income" : "expense");
+    } else if (!open && !transaction) {
+      form.reset({
+        accountId: "",
+        categoryId: "",
+        amount: "",
+        type: "EXPENSE",
+        note: "",
+        occurredAt: new Date().toISOString().split("T")[0],
+      });
       setActiveTab("expense");
     }
-  }, [open, form]);
+  }, [open, transaction, form]);
 
   const selectedAccountId = form.watch("accountId");
   const selectedAccount = accounts?.find((acc) => acc.id === selectedAccountId);
@@ -71,21 +107,39 @@ export function TransactionForm({ trigger, onSuccess }: TransactionFormProps) {
   const filteredCategories = activeTab === "income" ? incomeCategories : expenseCategories;
 
   React.useEffect(() => {
-    form.setValue("type", activeTab === "income" ? "INCOME" : "EXPENSE");
-    form.setValue("categoryId", ""); // Reset category when tab changes
-  }, [activeTab, form]);
+    if (!isEditMode) {
+      form.setValue("type", activeTab === "income" ? "INCOME" : "EXPENSE");
+      form.setValue("categoryId", ""); // Reset category when tab changes (only in create mode)
+    }
+  }, [activeTab, form, isEditMode]);
 
   const onSubmit = async (data: FormData) => {
     try {
       const amountInCents = parseInputToCents(data.amount);
-      await createTransaction.mutateAsync({
-        accountId: data.accountId,
-        categoryId: data.categoryId || undefined,
-        amount: amountInCents,
-        type: data.type,
-        note: data.note || undefined,
-        occurredAt: data.occurredAt ? new Date(data.occurredAt).toISOString() : undefined,
-      });
+      
+      if (isEditMode && transaction) {
+        await updateTransaction.mutateAsync({
+          id: transaction.id,
+          transaction: {
+            accountId: data.accountId,
+            categoryId: data.categoryId || undefined,
+            amount: amountInCents,
+            type: data.type,
+            note: data.note || undefined,
+            occurredAt: data.occurredAt ? new Date(data.occurredAt).toISOString() : undefined,
+          },
+        });
+      } else {
+        await createTransaction.mutateAsync({
+          accountId: data.accountId,
+          categoryId: data.categoryId || undefined,
+          amount: amountInCents,
+          type: data.type,
+          note: data.note || undefined,
+          occurredAt: data.occurredAt ? new Date(data.occurredAt).toISOString() : undefined,
+        });
+      }
+      
       form.reset();
       setOpen(false);
       onSuccess?.();
@@ -94,24 +148,45 @@ export function TransactionForm({ trigger, onSuccess }: TransactionFormProps) {
     }
   };
 
+  // Auto-open dialog when transaction is provided (edit mode)
+  React.useEffect(() => {
+    if (transaction && controlledOpen === undefined && !open) {
+      setOpen(true);
+    }
+  }, [transaction, open, controlledOpen, setOpen]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Transaction</DialogTitle>
+          <DialogTitle>{isEditMode ? "Edit Transaction" : "Add Transaction"}</DialogTitle>
           <DialogDescription>
-            Record a new income or expense transaction
+            {isEditMode
+              ? "Update transaction details"
+              : "Record a new income or expense transaction"}
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "income" | "expense")} className="w-full">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={(v) => !isEditMode && setActiveTab(v as "income" | "expense")} 
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="expense" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="expense" 
+              className="flex items-center gap-2"
+              disabled={isEditMode}
+            >
               <TrendingDown className="h-4 w-4" />
               Expense
             </TabsTrigger>
-            <TabsTrigger value="income" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="income" 
+              className="flex items-center gap-2"
+              disabled={isEditMode}
+            >
               <TrendingUp className="h-4 w-4" />
               Income
             </TabsTrigger>
@@ -219,15 +294,19 @@ export function TransactionForm({ trigger, onSuccess }: TransactionFormProps) {
               </Button>
               <Button
                 type="submit"
-                disabled={createTransaction.isPending}
+                disabled={createTransaction.isPending || updateTransaction.isPending}
                 className={cn(
                   activeTab === "income"
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-red-600 hover:bg-red-700"
                 )}
               >
-                {createTransaction.isPending
-                  ? "Creating..."
+                {createTransaction.isPending || updateTransaction.isPending
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Creating..."
+                  : isEditMode
+                  ? "Update Transaction"
                   : activeTab === "income"
                   ? "Add Income"
                   : "Add Expense"}
