@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/nextauth-config";
 import { prisma } from "@/lib/prisma";
 import { importFromCSV, type ImportData } from "@/lib/csv-utils";
 import { z } from "zod";
-import type { AccountType } from "@/generated/prisma/client";
+import type { AccountType, TxType } from "@/generated/prisma/client";
 
 const importSchema = z.object({
   csvData: z.string(), // CSV text content
@@ -176,7 +176,7 @@ export async function POST(req: Request) {
             accountId: account.id,
             categoryId,
             amount: txData.amount,
-            type: txData.type,
+            type: txData.type as TxType,
             note: txData.note,
             occurredAt: new Date(txData.occurredAt),
           },
