@@ -115,7 +115,7 @@ export default function DashboardLayout({
       <div className="flex min-h-screen flex-col">
         <header className="border-b p-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold">IW Expense Tracker</h1>
+            <h1 className="text-lg font-semibold">IW Expense</h1>
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Sheet>

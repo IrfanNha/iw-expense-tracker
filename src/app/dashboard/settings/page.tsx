@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useUpdateName, useUpdatePin } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,8 +18,27 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { updateNameSchema, updatePinSchema } from "@/lib/validators";
-import { User, Lock, Eye, EyeOff, Download, Upload, Database, Shield, CheckCircle2, AlertCircle, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  Download,
+  Upload,
+  Database,
+  Shield,
+  CheckCircle2,
+  AlertCircle,
+  Trash2,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PasswordInput } from "@/components/ui/password-input";
 import {
   AlertDialog,
@@ -103,7 +128,7 @@ export default function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="data" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
-            Data Management
+            Data
           </TabsTrigger>
         </TabsList>
 
@@ -111,12 +136,13 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Update Name</CardTitle>
-              <CardDescription>
-                Change your display name
-              </CardDescription>
+              <CardDescription>Change your display name</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={nameForm.handleSubmit(onNameSubmit)} className="space-y-4">
+              <form
+                onSubmit={nameForm.handleSubmit(onNameSubmit)}
+                className="space-y-4"
+              >
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
@@ -134,7 +160,9 @@ export default function SettingsPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => nameForm.reset({ name: session?.user?.name || "" })}
+                    onClick={() =>
+                      nameForm.reset({ name: session?.user?.name || "" })
+                    }
                   >
                     Cancel
                   </Button>
@@ -156,7 +184,10 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={pinForm.handleSubmit(onPinSubmit)} className="space-y-4">
+              <form
+                onSubmit={pinForm.handleSubmit(onPinSubmit)}
+                className="space-y-4"
+              >
                 <div className="space-y-2">
                   <Label htmlFor="currentPin">Current PIN</Label>
                   <div className="relative">
@@ -247,7 +278,9 @@ export default function SettingsPage() {
             <AlertDialogDescription>{successMessage}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setSuccessDialogOpen(false)}>OK</AlertDialogAction>
+            <AlertDialogAction onClick={() => setSuccessDialogOpen(false)}>
+              OK
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -260,7 +293,9 @@ export default function SettingsPage() {
             <AlertDialogDescription>{errorMessage}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setErrorDialogOpen(false)}>OK</AlertDialogAction>
+            <AlertDialogAction onClick={() => setErrorDialogOpen(false)}>
+              OK
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -275,11 +310,11 @@ function DataManagementTab() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Preview dialog
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
-  
+
   // Clear all data
   const [isClearing, setIsClearing] = useState(false);
   const [showClearDialog, setShowClearDialog] = useState(false);
@@ -402,9 +437,11 @@ function DataManagementTab() {
       setImportResult(result);
       setImportFile(null);
       setShowPreviewDialog(false);
-      
+
       // Reset file input
-      const fileInput = document.getElementById("import-file") as HTMLInputElement;
+      const fileInput = document.getElementById(
+        "import-file"
+      ) as HTMLInputElement;
       if (fileInput) fileInput.value = "";
 
       // Refresh page data
@@ -437,7 +474,7 @@ function DataManagementTab() {
 
       setShowClearConfirmDialog(false);
       setShowClearDialog(false);
-      
+
       // Refresh page after clearing
       setTimeout(() => {
         window.location.reload();
@@ -460,7 +497,9 @@ function DataManagementTab() {
             Export Data
           </CardTitle>
           <CardDescription>
-            Download all your data (accounts, categories, transactions, and transfers) as an encrypted backup file (.enc) for secure backup or migration.
+            Download all your data (accounts, categories, transactions, and
+            transfers) as an encrypted backup file (.enc) for secure backup or
+            migration.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -477,7 +516,9 @@ function DataManagementTab() {
             <div className="mt-3 pt-3 border-t flex items-start gap-2">
               <Shield className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Your data will be exported as CSV format. All data is sanitized to ensure safe export. Invalid values will be filtered out automatically.
+                Your data will be exported as CSV format. All data is sanitized
+                to ensure safe export. Invalid values will be filtered out
+                automatically.
               </p>
             </div>
           </div>
@@ -509,7 +550,8 @@ function DataManagementTab() {
             Import Data
           </CardTitle>
           <CardDescription>
-            Import data from a previously exported CSV backup file (.csv). Invalid data will be automatically filtered out.
+            Import data from a previously exported CSV backup file (.csv).
+            Invalid data will be automatically filtered out.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -552,11 +594,12 @@ function DataManagementTab() {
             />
             {importFile && (
               <p className="text-sm text-muted-foreground">
-                Selected: {importFile.name} ({(importFile.size / 1024).toFixed(2)} KB)
+                Selected: {importFile.name} (
+                {(importFile.size / 1024).toFixed(2)} KB)
               </p>
             )}
           </div>
-          
+
           {importFile && (
             <Button
               onClick={handleImportClick}
@@ -576,7 +619,7 @@ function DataManagementTab() {
               )}
             </Button>
           )}
-          
+
           {/* Preview Dialog */}
           <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
             <DialogContent>
@@ -586,7 +629,8 @@ function DataManagementTab() {
                   Import Preview
                 </DialogTitle>
                 <DialogDescription>
-                  Review the data that will be imported. Click "Confirm Import" to proceed.
+                  Review the data that will be imported. Click "Confirm Import"
+                  to proceed.
                 </DialogDescription>
               </DialogHeader>
               {previewData && (
@@ -595,7 +639,10 @@ function DataManagementTab() {
                     <p className="text-sm font-medium">Backup Information</p>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>Version: {previewData.version}</p>
-                      <p>Created: {new Date(previewData.timestamp).toLocaleString()}</p>
+                      <p>
+                        Created:{" "}
+                        {new Date(previewData.timestamp).toLocaleString()}
+                      </p>
                     </div>
                   </div>
                   <div className="rounded-lg border p-4 space-y-2">
@@ -609,7 +656,10 @@ function DataManagementTab() {
                   </div>
                   <div className="rounded-lg border bg-amber-500/10 border-amber-500/20 p-3">
                     <p className="text-xs text-amber-700 dark:text-amber-300">
-                      Mode: <strong>{importMode === "append" ? "Append" : "Replace"}</strong>
+                      Mode:{" "}
+                      <strong>
+                        {importMode === "append" ? "Append" : "Replace"}
+                      </strong>
                     </p>
                   </div>
                 </div>
@@ -638,13 +688,25 @@ function DataManagementTab() {
                 Import Successful!
               </p>
               <div className="text-sm space-y-1">
-                <p>Accounts: {importResult.results.accounts.created} created, {importResult.results.accounts.updated} updated</p>
-                <p>Categories: {importResult.results.categories.created} created, {importResult.results.categories.updated} updated</p>
-                <p>Transactions: {importResult.results.transactions.created} created</p>
-                <p>Transfers: {importResult.results.transfers.created} created</p>
+                <p>
+                  Accounts: {importResult.results.accounts.created} created,{" "}
+                  {importResult.results.accounts.updated} updated
+                </p>
+                <p>
+                  Categories: {importResult.results.categories.created} created,{" "}
+                  {importResult.results.categories.updated} updated
+                </p>
+                <p>
+                  Transactions: {importResult.results.transactions.created}{" "}
+                  created
+                </p>
+                <p>
+                  Transfers: {importResult.results.transfers.created} created
+                </p>
                 {importResult.summary.totalErrors > 0 && (
                   <p className="text-amber-600 dark:text-amber-400 mt-2">
-                    {importResult.summary.totalErrors} errors occurred. Check console for details.
+                    {importResult.summary.totalErrors} errors occurred. Check
+                    console for details.
                   </p>
                 )}
               </div>
@@ -657,14 +719,17 @@ function DataManagementTab() {
             </div>
           )}
 
-
           <div className="rounded-lg border bg-amber-500/10 border-amber-500/20 p-4">
             <p className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-2">
               ⚠️ Important Notes:
             </p>
             <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1 list-disc list-inside">
-              <li>Only CSV backup files (.csv) from this application are supported</li>
-              <li>Account names must match exactly for transactions and transfers</li>
+              <li>
+                Only CSV backup files (.csv) from this application are supported
+              </li>
+              <li>
+                Account names must match exactly for transactions and transfers
+              </li>
               <li>Importing will update account balances automatically</li>
               <li>Backup your current data before importing in replace mode</li>
             </ul>
@@ -691,8 +756,9 @@ function DataManagementTab() {
                   Clear All Data
                 </h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Permanently delete all your accounts, categories, transactions, and transfers. 
-                  This action cannot be undone. Make sure you have exported your data before proceeding.
+                  Permanently delete all your accounts, categories,
+                  transactions, and transfers. This action cannot be undone.
+                  Make sure you have exported your data before proceeding.
                 </p>
                 <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside mb-3">
                   <li>All accounts will be deleted</li>
@@ -719,8 +785,8 @@ function DataManagementTab() {
       </Card>
 
       {/* Clear All Data - First Confirmation Dialog */}
-      <AlertDialog 
-        open={showClearDialog} 
+      <AlertDialog
+        open={showClearDialog}
         onOpenChange={(open) => {
           setShowClearDialog(open);
           if (!open) {
@@ -736,7 +802,8 @@ function DataManagementTab() {
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <p>
-                You are about to permanently delete <strong>ALL</strong> your data:
+                You are about to permanently delete <strong>ALL</strong> your
+                data:
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>All accounts</li>
@@ -768,8 +835,8 @@ function DataManagementTab() {
       </AlertDialog>
 
       {/* Clear All Data - Final Confirmation Dialog */}
-      <AlertDialog 
-        open={showClearConfirmDialog} 
+      <AlertDialog
+        open={showClearConfirmDialog}
         onOpenChange={(open) => {
           setShowClearConfirmDialog(open);
           if (!open) {
@@ -788,7 +855,8 @@ function DataManagementTab() {
                 Are you absolutely sure you want to delete all your data?
               </p>
               <p className="text-sm">
-                This is your last chance to cancel. Once confirmed, all your data will be permanently deleted and cannot be recovered.
+                This is your last chance to cancel. Once confirmed, all your
+                data will be permanently deleted and cannot be recovered.
               </p>
               <p className="text-xs text-muted-foreground mt-3">
                 Type <strong>"DELETE"</strong> in the input below to confirm.
@@ -835,4 +903,3 @@ function DataManagementTab() {
     </div>
   );
 }
-
