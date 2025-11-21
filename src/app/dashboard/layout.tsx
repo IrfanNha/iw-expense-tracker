@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Spinner } from "@/components/ui/spinner";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { Logo } from "@/components/layout/Logo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -64,7 +65,10 @@ export default function DashboardLayout({
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
       <div className="border-b p-4">
-        <h1 className="text-lg font-semibold">IW Expense Tracker</h1>
+        <div className="flex items-center gap-2">
+          <Logo width={28} height={28} />
+          <h1 className="text-lg font-semibold">IW Expense Tracker</h1>
+        </div>
         {session?.user?.name && (
           <p className="text-sm font-medium mt-1">{session.user.name}</p>
         )}
@@ -117,7 +121,10 @@ export default function DashboardLayout({
       <div className="flex min-h-screen flex-col">
         <header className="border-b p-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold">IW Expense</h1>
+            <div className="flex items-center gap-2">
+              <Logo width={24} height={24} />
+              <h1 className="text-lg font-semibold">IW Expense</h1>
+            </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Sheet>
