@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { Spinner } from "@/components/ui/spinner";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -49,7 +50,7 @@ export default function DashboardLayout({
   if (status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+        <Spinner className="h-8 w-8 text-muted-foreground" />
       </div>
     );
   }

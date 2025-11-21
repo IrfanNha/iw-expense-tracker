@@ -21,19 +21,21 @@ import {
   ChevronRight,
   Trash2,
   Receipt,
+  Pencil,
 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { TransactionForm } from "@/components/forms/TransactionForm";
 import { TransferForm } from "@/components/forms/TransferForm";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useDeleteTransaction } from "@/hooks/useTransactions";
+import { useDeleteTransaction, type Transaction } from "@/hooks/useTransactions";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 import Link from "next/link";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
 import { Calendar } from "@/components/ui/calendar";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Popover,
   PopoverContent,
@@ -79,6 +81,7 @@ export default function DashboardPage() {
   const [transactionToDelete, setTransactionToDelete] = React.useState<string | null>(null);
   const [errorDialogOpen, setErrorDialogOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string>("");
+  const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
 
   const totalBalance =
     accounts?.reduce((sum, acc) => sum + acc.balance, 0) || 0;
@@ -360,8 +363,8 @@ export default function DashboardPage() {
               </Link>
             </div>
             {accountsLoading ? (
-              <div className="text-center py-3 text-muted-foreground text-sm">
-                Loading accounts...
+              <div className="flex items-center justify-center py-3">
+                <Spinner className="h-6 w-6 text-muted-foreground" />
               </div>
             ) : accounts && accounts.length > 0 ? (
               <div className="space-y-2 md:space-y-3">
@@ -436,8 +439,8 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
                 {transactionsLoading ? (
-                  <div className="text-center py-6 md:py-12 text-muted-foreground text-sm md:text-base">
-                    Loading...
+                  <div className="flex items-center justify-center py-6 md:py-12">
+                    <Spinner className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                   </div>
                 ) : activeTab === "all" ? (
                   <IncomeExpenseChart
@@ -633,8 +636,8 @@ export default function DashboardPage() {
 
                   <TabsContent value={activeTab} className="mt-3 md:mt-4">
                     {transactionsLoading ? (
-                      <div className="text-center py-6 md:py-12 text-muted-foreground text-sm md:text-base">
-                        Loading transactions...
+                      <div className="flex items-center justify-center py-6 md:py-12">
+                        <Spinner className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                       </div>
                     ) : filteredTransactions.length === 0 ? (
                       <div className="text-center py-6 md:py-12">
@@ -775,7 +778,7 @@ export default function DashboardPage() {
                                       </span>
                                       <span className="text-xs md:text-xs text-muted-foreground truncate">
                                         {transaction.category?.name || "Other"}{" "}
-                                        — {transaction.account?.name}
+                                        - {transaction.account?.name}
                                       </span>
                                       <span className="text-xs md:text-xs text-muted-foreground">
                                         {new Date(
@@ -803,6 +806,18 @@ export default function DashboardPage() {
                                       )}
                                     </p>
                                     <div className="flex items-center gap-1">
+                                      {transaction.type !== "TRANSFER_DEBIT" && 
+                                       transaction.type !== "TRANSFER_CREDIT" && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => setEditingTransaction(transaction)}
+                                          className="h-7 w-7 md:h-8 md:w-8"
+                                          title="Edit transaction"
+                                        >
+                                          <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                        </Button>
+                                      )}
                                       <Button
                                         variant="ghost"
                                         size="icon"
@@ -810,6 +825,7 @@ export default function DashboardPage() {
                                           handleDelete(transaction.id)
                                         }
                                         className="h-7 w-7 md:h-8 md:w-8"
+                                        title="Delete transaction"
                                       >
                                         <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                       </Button>
@@ -839,6 +855,20 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Edit Transaction Form */}
+      {editingTransaction && (
+        <TransactionForm
+          transaction={editingTransaction}
+          open={!!editingTransaction}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingTransaction(null);
+            }
+          }}
+          onSuccess={() => setEditingTransaction(null)}
+        />
+      )}
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -850,7 +880,16 @@ export default function DashboardPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} disabled={deleteTransaction.isPending}>
+              {deleteTransaction.isPending ? (
+                <span className="flex items-center">
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Deleting...
+                </span>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

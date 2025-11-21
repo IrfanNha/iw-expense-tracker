@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
 import { Calendar } from "@/components/ui/calendar";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Popover,
   PopoverContent,
@@ -254,8 +255,8 @@ export default function TransactionsPage() {
           </CardHeader>
           <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
             {transactionsLoading ? (
-              <div className="text-center py-6 md:py-12 text-muted-foreground text-sm md:text-base">
-                Loading...
+              <div className="flex items-center justify-center py-6 md:py-12">
+                <Spinner className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
               </div>
             ) : activeTab === "all" ? (
               <IncomeExpenseChart
@@ -451,8 +452,8 @@ export default function TransactionsPage() {
 
               <TabsContent value={activeTab} className="mt-3 md:mt-4">
                 {transactionsLoading ? (
-                  <div className="text-center py-6 md:py-12 text-muted-foreground text-sm md:text-base">
-                    Loading transactions...
+                  <div className="flex items-center justify-center py-6 md:py-12">
+                    <Spinner className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                   </div>
                 ) : filteredTransactions.length === 0 ? (
                   <div className="text-center py-6 md:py-12">
@@ -693,7 +694,16 @@ export default function TransactionsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} disabled={deleteTransaction.isPending}>
+              {deleteTransaction.isPending ? (
+                <span className="flex items-center">
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Deleting...
+                </span>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
