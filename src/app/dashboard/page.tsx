@@ -785,6 +785,14 @@ export default function DashboardPage() {
                                           {transaction.note}
                                         </span>
                                       )}
+                                      <span className="text-xs md:text-xs text-muted-foreground">
+                                        {new Date(
+                                          transaction.occurredAt
+                                        ).toLocaleTimeString("id-ID", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
                                     </div>
                                   </div>
                                   <div className="flex flex-col items-end gap-1 flex-shrink-0 pl-2 md:pl-4">

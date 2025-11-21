@@ -65,7 +65,7 @@ export function TransactionForm({
     defaultValues: {
       accountId: transaction?.accountId || "",
       categoryId: transaction?.categoryId || "",
-      amount: transaction ? formatNumber(transaction.amount) : "",
+      amount: transaction ? String(transaction.amount / 100) : "",
       type: (transaction?.type === "INCOME" || transaction?.type === "EXPENSE") 
         ? transaction.type 
         : "EXPENSE",
@@ -81,7 +81,7 @@ export function TransactionForm({
       form.reset({
         accountId: transaction.accountId,
         categoryId: transaction.categoryId || "",
-        amount: formatNumber(transaction.amount),
+        amount: String(transaction.amount / 100),
         type: transaction.type,
         note: transaction.note || "",
         occurredAt: new Date(transaction.occurredAt).toISOString().split("T")[0],
