@@ -27,6 +27,7 @@ import * as Icons from "lucide-react";
 import { TransactionForm } from "@/components/forms/TransactionForm";
 import { TransferForm } from "@/components/forms/TransferForm";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeleteTransaction, type Transaction } from "@/hooks/useTransactions";
 import { cn } from "@/lib/utils";
@@ -770,24 +771,20 @@ export default function DashboardPage() {
                                     >
                                       <CategoryIcon className="h-4 w-4 md:h-5 md:w-5" />
                                     </div>
-                                    <div className="flex flex-col min-w-0">
-                                      <span className="text-sm md:text-sm font-semibold truncate">
-                                        {transaction.note ||
-                                          transaction.category?.name ||
-                                          "Daily Spend"}
+                                    <div className="flex flex-col min-w-0 gap-1">
+                                      <span className="text-sm md:text-sm font-semibold">
+                                        {transaction.category?.name || "Other"}
                                       </span>
-                                      <span className="text-xs md:text-xs text-muted-foreground truncate">
-                                        {transaction.category?.name || "Other"}{" "}
-                                        - {transaction.account?.name}
-                                      </span>
-                                      <span className="text-xs md:text-xs text-muted-foreground">
-                                        {new Date(
-                                          transaction.occurredAt
-                                        ).toLocaleTimeString("id-ID", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </span>
+                                      {transaction.account?.name && (
+                                        <Badge variant="outline" className="text-xs w-fit">
+                                          {transaction.account.name}
+                                        </Badge>
+                                      )}
+                                      {transaction.note && (
+                                        <span className="text-xs md:text-xs text-muted-foreground truncate">
+                                          {transaction.note}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="flex flex-col items-end gap-1 flex-shrink-0 pl-2 md:pl-4">
