@@ -118,6 +118,21 @@ export function TransactionForm({
       const amountInCents = parseInputToCents(data.amount);
       
       if (isEditMode && transaction) {
+        // For edit, preserve the original time if only date is changed
+        let occurredAtValue: string | undefined;
+        if (data.occurredAt) {
+          const selectedDate = new Date(data.occurredAt);
+          const originalDate = new Date(transaction.occurredAt);
+          // Keep the original time, only update the date
+          selectedDate.setHours(
+            originalDate.getHours(),
+            originalDate.getMinutes(),
+            originalDate.getSeconds(),
+            originalDate.getMilliseconds()
+          );
+          occurredAtValue = selectedDate.toISOString();
+        }
+        
         await updateTransaction.mutateAsync({
           id: transaction.id,
           transaction: {
@@ -126,17 +141,27 @@ export function TransactionForm({
             amount: amountInCents,
             type: data.type,
             note: data.note || undefined,
-            occurredAt: data.occurredAt ? new Date(data.occurredAt).toISOString() : undefined,
+            occurredAt: occurredAtValue,
           },
         });
       } else {
+        // For new transactions, combine the selected date with current time
+        let occurredAtValue: string | undefined;
+        if (data.occurredAt) {
+          const selectedDate = new Date(data.occurredAt);
+          const now = new Date();
+          // Set the time to current time but keep the selected date
+          selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+          occurredAtValue = selectedDate.toISOString();
+        }
+        
         await createTransaction.mutateAsync({
           accountId: data.accountId,
           categoryId: data.categoryId || undefined,
           amount: amountInCents,
           type: data.type,
           note: data.note || undefined,
-          occurredAt: data.occurredAt ? new Date(data.occurredAt).toISOString() : undefined,
+          occurredAt: occurredAtValue,
         });
       }
       

@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Spinner } from "@/components/ui/spinner";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -139,7 +140,8 @@ export default function DashboardLayout({
             </div>
           </div>
         </header>
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 p-4 pb-20 md:pb-4">{children}</main>
+        <MobileBottomNav />
       </div>
     );
   }
