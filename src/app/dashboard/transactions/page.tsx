@@ -3,6 +3,7 @@
 import * as React from "react";
 import { TransactionForm } from "@/components/forms/TransactionForm";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTransactions, useDeleteTransaction, type Transaction } from "@/hooks/useTransactions";
@@ -586,16 +587,20 @@ export default function TransactionsPage() {
                                 >
                                   <CategoryIcon className="h-4 w-4 md:h-5 md:w-5" />
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-sm md:text-sm font-semibold truncate">
-                                    {transaction.note ||
-                                      transaction.category?.name ||
-                                      "Daily Spend"}
+                                <div className="flex flex-col min-w-0 gap-1">
+                                  <span className="text-sm md:text-sm font-semibold">
+                                    {transaction.category?.name || "Other"}
                                   </span>
-                                  <span className="text-xs md:text-xs text-muted-foreground truncate">
-                                    {transaction.category?.name || "Other"}{" "}
-                                    — {transaction.account?.name}
-                                  </span>
+                                  {transaction.account?.name && (
+                                    <Badge variant="outline" className="text-xs w-fit">
+                                      {transaction.account.name}
+                                    </Badge>
+                                  )}
+                                  {transaction.note && (
+                                    <span className="text-xs md:text-xs text-muted-foreground truncate">
+                                      {transaction.note}
+                                    </span>
+                                  )}
                                   <span className="text-xs md:text-xs text-muted-foreground">
                                     {new Date(
                                       transaction.occurredAt
