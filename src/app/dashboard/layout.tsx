@@ -119,7 +119,7 @@ export default function DashboardLayout({
   if (isMobile) {
     return (
       <div className="flex min-h-screen flex-col">
-        <header className="border-b p-4">
+        <header className=" p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Logo width={24} height={24} />

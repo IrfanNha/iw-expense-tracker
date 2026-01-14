@@ -9,13 +9,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Moon, Sun, Palette, Sparkles } from "lucide-react";
+import { Moon, Sun, Palette, BoxIcon } from "lucide-react";
 
 const themes = [
   { value: "light", label: "Light", icon: Sun },
   { value: "dark", label: "Dark", icon: Moon },
-  { value: "blue", label: "Blue", icon: Palette },
-  { value: "green", label: "Green", icon: Sparkles },
+  { value: "green", label: "Green", icon: Palette },
+  { value: "blue", label: "Blue", icon: BoxIcon },
 ] as const;
 
 export function ThemeToggle() {

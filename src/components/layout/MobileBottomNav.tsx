@@ -8,7 +8,6 @@ import {
   Home,
   Wallet,
   CreditCard,
-  TrendingUp,
   ArrowLeftRight,
   Settings,
 } from "lucide-react";
@@ -17,7 +16,6 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
   { href: "/dashboard/categories", label: "Categories", icon: CreditCard },
-  { href: "/dashboard/transactions", label: "Transactions", icon: TrendingUp },
   { href: "/dashboard/transfer", label: "Transfer", icon: ArrowLeftRight },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
@@ -26,9 +24,9 @@ export function MobileBottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden shadow-lg safe-area-inset-bottom">
-      <div className="overflow-x-auto scrollbar-hide h-full">
-        <div className="flex items-center gap-1.5 px-3 py-2 min-w-max h-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden shadow-lg">
+      <div className="h-full max-w-screen-sm mx-auto">
+        <div className="flex items-center justify-around h-full px-2 py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -37,22 +35,27 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex min-w-[70px] max-w-[90px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-1.5 text-xs transition-all duration-200",
-                  "active:scale-95",
+                  "flex flex-1 items-center justify-center rounded-lg p-3 transition-all duration-300 ease-out",
+                  "active:scale-95 hover:bg-accent/50",
+                  "relative group",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    ? "text-primary"
+                    : "text-muted-foreground"
                 )}
+                aria-label={item.label}
               >
                 <Icon 
+                strokeWidth={1.5}
                   className={cn(
-                    "h-5 w-5 transition-transform duration-200 shrink-0",
-                    isActive && "scale-110"
+                    "h-5 w-5 transition-all duration-300 ease-out",
+                    isActive && "scale-110",
+                    "group-hover:scale-105"
                   )} 
                 />
-                <span className="truncate font-medium leading-tight text-center w-full">
-                  {item.label}
-                </span>
+                {/* Active indicator dot */}
+                {isActive && (
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                )}
               </Link>
             );
           })}

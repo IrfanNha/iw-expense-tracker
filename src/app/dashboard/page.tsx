@@ -268,7 +268,8 @@ export default function DashboardPage() {
   return (
     <div className="w-full flex justify-center">
       <div className="w-full max-w-[480px] md:max-w-3xl lg:max-w-[1400px] xl:max-w-[1600px] space-y-3 md:space-y-5 pb-20 md:pb-24  lg:px-8">
-        {/* Header & Total Balance */}
+        
+          {/* Header & Total Balance */}
         <div className="flex items-start justify-between gap-3 md:gap-6">
           <div className="space-y-1 md:space-y-1.5">
             <p className="text-xs sm:text-sm text-muted-foreground">
@@ -298,7 +299,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Summary strip */}
-        <Card className="border rounded-lg">
+        <Card className="border rounded-sm shadow-none">
           <CardContent className="px-3 py-2 md:px-6 md:py-4">
             <div className="flex items-center justify-between gap-3 text-[10px] sm:text-xs md:text-base lg:gap-12">
               <div className="flex flex-col gap-0.5 md:gap-1">
@@ -346,6 +347,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+        
 
         {/* Accounts + Chart & Transactions */}
         <div className="space-y-3 md:space-y-4 md:grid md:grid-cols-[380px_1fr] lg:grid-cols-[420px_1fr] md:gap-5 lg:gap-6">
@@ -357,7 +359,7 @@ export default function DashboardPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-xs sm:text-sm md:h-9 md:px-4 md:text-sm"
+                  className="h-8 px-2 font-medium text-primary text-xs sm:text-sm md:h-9 md:px-4 md:text-sm"
                 >
                   Manage
                 </Button>
@@ -380,7 +382,7 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={account.id}
-                      className="flex items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2.5 md:px-4 md:py-4"
+                      className="flex items-center justify-between gap-2 rounded-sm border bg-card px-3 py-2.5 md:px-4 md:py-4"
                     >
                       <div className="flex items-center gap-2 md:gap-3">
                         <div className="flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-full bg-primary/10">
@@ -421,8 +423,8 @@ export default function DashboardPage() {
           {/* Chart & Transactions */}
           <div className="space-y-3 md:space-y-5">
             {/* Chart Section */}
-            <Card className="border rounded-lg">
-              <CardHeader className="px-3 py-2.5 md:px-6 md:py-4">
+            <Card className="border rounded-sm shadow-none">
+              <CardHeader className="px-3 md:px-6 md:py-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-sm md:text-lg font-semibold">
@@ -465,8 +467,8 @@ export default function DashboardPage() {
             </Card>
 
             {/* Transaction List */}
-            <Card className="border rounded-lg">
-              <CardHeader className="px-3 py-2.5 md:px-6 md:py-4 space-y-3 md:space-y-4">
+            <Card className="border rounded-sm shadow-none">
+              <CardHeader className="px-3  md:px-6 md:py-4 space-y-3 md:space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-sm md:text-lg font-semibold">
@@ -491,11 +493,11 @@ export default function DashboardPage() {
 
                 {/* Period Selector */}
                 <div className="flex items-center justify-center">
-                  <div className="flex items-center gap-1 rounded-full bg-muted/60 p-1">
+                  <div className="flex items-center gap-1 rounded-md bg-muted/60 p-1">
                     <Button
                       size="sm"
                       variant={period === "day" ? "default" : "ghost"}
-                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-full"
+                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-md"
                       onClick={() => setPeriod("day")}
                     >
                       Day
@@ -503,7 +505,7 @@ export default function DashboardPage() {
                     <Button
                       size="sm"
                       variant={period === "week" ? "default" : "ghost"}
-                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-full"
+                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-md"
                       onClick={() => setPeriod("week")}
                     >
                       Week
@@ -511,7 +513,7 @@ export default function DashboardPage() {
                     <Button
                       size="sm"
                       variant={period === "month" ? "default" : "ghost"}
-                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-full"
+                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-md"
                       onClick={() => setPeriod("month")}
                     >
                       Month
@@ -520,8 +522,8 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Date Navigation */}
-                <div className="flex items-center justify-center rounded-full border px-2 py-2 md:px-3 md:py-2.5 bg-muted/30">
-                  <div className="flex items-center gap-1.5 md:gap-2.5">
+                <div className="flex items-center justify-center rounded-md border px-2 py-2 md:px-3 md:py-2.5 bg-muted/30">
+                  <div className="flex items-center gap-3 md:gap-2.5">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -541,7 +543,7 @@ export default function DashboardPage() {
                           )
                         )
                       }
-                      className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-background hover:bg-muted"
+                      className="h-8 w-8 md:h-9 md:w-9 rounded-md bg-background hover:bg-muted"
                     >
                       <ChevronLeft className="h-4 w-4 md:h-4 md:w-4" />
                     </Button>
@@ -598,7 +600,7 @@ export default function DashboardPage() {
                           )
                         )
                       }
-                      className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-background hover:bg-muted"
+                      className="h-8 w-8 md:h-9 md:w-9 rounded-md bg-background hover:bg-muted"
                     >
                       <ChevronRight className="h-4 w-4 md:h-4 md:w-4" />
                     </Button>
@@ -612,23 +614,23 @@ export default function DashboardPage() {
                     setActiveTab(v as "all" | "income" | "expense");
                   }}
                 >
-                  <TabsList className="grid w-full grid-cols-3 h-9 md:h-10 rounded-full bg-muted/60">
+                  <TabsList className="grid w-full grid-cols-3 h-9 md:h-10 rounded-md bg-muted/60">
                     <TabsTrigger
                       value="all"
-                      className="text-xs sm:text-sm md:text-sm rounded-full data-[state=active]:bg-background"
+                      className="text-xs sm:text-sm md:text-sm rounded-md data-[state=active]:bg-background"
                     >
                       All
                     </TabsTrigger>
                     <TabsTrigger
                       value="expense"
-                      className="flex items-center gap-1 md:gap-1.5 text-xs sm:text-sm md:text-sm rounded-full data-[state=active]:bg-background"
+                      className="flex items-center gap-1 md:gap-1.5 text-xs sm:text-sm md:text-sm rounded-md data-[state=active]:bg-background"
                     >
                       <TrendingDown className="h-3.5 w-3.5 md:h-4 md:w-4" />
                       <span>Exp</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="income"
-                      className="flex items-center gap-1 md:gap-1.5 text-xs sm:text-sm md:text-sm rounded-full data-[state=active]:bg-background"
+                      className="flex items-center gap-1 md:gap-1.5 text-xs sm:text-sm md:text-sm rounded-md data-[state=active]:bg-background"
                     >
                       <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
                       <span>Inc</span>
@@ -698,7 +700,7 @@ export default function DashboardPage() {
                               return (
                                 <div
                                   key={key}
-                                  className="flex items-center justify-between rounded-lg border bg-card px-3 py-2.5 md:px-4 md:py-3"
+                                  className="flex items-center justify-between rounded-sm border bg-card px-3 py-2.5 md:px-4 md:py-3"
                                 >
                                   <div className="flex items-center gap-2.5 md:gap-3">
                                     <div className="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-muted">
@@ -758,7 +760,7 @@ export default function DashboardPage() {
                               return (
                                 <div
                                   key={transaction.id}
-                                  className="flex items-center justify-between rounded-lg border bg-card px-3 py-2.5 md:px-4 md:py-3"
+                                  className="flex items-center justify-between rounded-sm border bg-card px-3 py-2.5 md:px-4 md:py-3"
                                 >
                                   <div className="flex items-center gap-2.5 md:gap-3 flex-1 min-w-0">
                                     <div

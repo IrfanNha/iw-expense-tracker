@@ -21,11 +21,14 @@ import { AmountInput } from "@/components/forms/AmountInput";
 import { useCreateTransaction, useUpdateTransaction, type Transaction } from "@/hooks/useTransactions";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useCategories } from "@/hooks/useCategories";
-import { parseInputToCents, formatNumber } from "@/lib/money";
+import { parseInputToCents } from "@/lib/money";
 import { transactionSchema } from "@/lib/validators";
-import { Plus, TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, CalendarIcon } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 
 const formSchema = transactionSchema.extend({
   amount: z.string().min(1, "Amount is required"),
@@ -168,7 +171,7 @@ export function TransactionForm({
       form.reset();
       setOpen(false);
       onSuccess?.();
-    } catch (error) {
+    } catch {
       // Error handled by React Query
     }
   };
@@ -183,7 +186,7 @@ export function TransactionForm({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-screen md:max-h-[90vh]  overflow-y-auto rounded-none">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Edit Transaction" : "Add Transaction"}</DialogTitle>
           <DialogDescription>
@@ -296,13 +299,70 @@ export function TransactionForm({
               </div>
 
               {/* Date */}
-              <div className="space-y-2">
-                <Label htmlFor="occurredAt">Date</Label>
-                <Input
-                  id="occurredAt"
-                  type="date"
-                  {...form.register("occurredAt")}
-                />
+              <div className="space-y-3">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.watch("occurredAt") && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {(() => {
+                        const occurredAt = form.watch("occurredAt");
+                        return occurredAt ? format(new Date(occurredAt), "PPP") : "Select date";
+                      })()}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={(() => {
+                        const occurredAt = form.watch("occurredAt");
+                        return occurredAt ? new Date(occurredAt) : undefined;
+                      })()}
+                      onSelect={(date) => {
+                        if (date) {
+                          form.setValue("occurredAt", format(date, "yyyy-MM-dd"));
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Quick Date Selection */}
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">Quick Select</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[0, 1, 2].map((daysAgo) => {
+                      const date = new Date();
+                      date.setDate(date.getDate() - daysAgo);
+                      const dateStr = format(date, "yyyy-MM-dd");
+                      const displayStr = format(date, "MM/dd");
+                      const isSelected = form.watch("occurredAt") === dateStr;
+                      
+                      return (
+                        <button
+                          key={daysAgo}
+                          type="button"
+                          onClick={() => form.setValue("occurredAt", dateStr)}
+                          className={cn(
+                            "px-4 py-2.5 rounded-lg border transition-all text-sm font-medium",
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary shadow-md"
+                              : "hover:bg-accent hover:border-primary/50"
+                          )}
+                        >
+                          {daysAgo === 0 ? "Today" : displayStr}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
