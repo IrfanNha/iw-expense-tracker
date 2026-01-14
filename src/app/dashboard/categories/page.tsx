@@ -143,7 +143,7 @@ export default function CategoriesPage() {
             </Button>
           </DialogTrigger>
   
-          <DialogContent className="max-w-md space-y-4 md:space-y-5">
+          <DialogContent className="max-w-md min-h-screen max-h-screen md:max-h-[90vh] overflow-y-auto rounded-none space-y-4 md:space-y-5">
             <DialogHeader>
               <DialogTitle>
                 {editingId ? "Edit Category" : "Create Category"}
