@@ -113,15 +113,15 @@ export default function CategoriesPage() {
   const expenseCategories = categories?.filter((cat) => !cat.isIncome) || [];
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-4 md:space-y-8">
   
       {/* PAGE HEADER */}
-      <div className="p-4 pb-6 sm:pb-0 bg-white dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <div className="p-4 pb-6 bg-white dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             Categories
           </h1>
-          <p className="text-sm md:text-base text-muted-foreground">
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             Organize your income and expense categories
           </p>
         </div>
@@ -163,7 +163,7 @@ export default function CategoriesPage() {
                 value={activeTab}
                 onValueChange={(v) => setActiveTab(v as "expense" | "income")}
               >
-                <TabsList className="grid grid-cols-2 w-full">
+                <TabsList className="grid grid-cols-2 w-full bg-accent">
                   <TabsTrigger value="expense" className="flex items-center gap-2">
                     <TrendingDown className="h-4 w-4" />
                     Expense
