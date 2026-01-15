@@ -122,7 +122,10 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      
+      {/* Add Accounts and Total Balance */}
+      <div className="p-4 mb-6 bg-white dark:bg-card dark:md:bg-background">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             Accounts
@@ -142,7 +145,7 @@ export default function AccountsPage() {
           }}
         >
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
+            <Button size="sm" className="gap-2 rounded-sm">
               <Plus className="h-4 w-4" />
               Add Account
             </Button>
@@ -234,7 +237,7 @@ export default function AccountsPage() {
       </div>
 
       {/* Total Balance Card */}
-      <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+      <Card className="rounded-sm bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
         <CardContent className="p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -251,13 +254,14 @@ export default function AccountsPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
 
       {isLoading ? (
         <div className="text-center py-8 md:py-12 text-muted-foreground text-sm">
           Loading accounts...
         </div>
       ) : accounts && accounts.length > 0 ? (
-        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="p-4 grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account) => {
             const IconComponent =
               (account.icon && Icons[account.icon as keyof typeof Icons]
@@ -267,12 +271,13 @@ export default function AccountsPage() {
             return (
               <Card
                 key={account.id}
-                className="hover:shadow-md transition-all group"
+                className="rounded-sm hover:shadow-md transition-all group"
               >
-                <CardContent className="p-4 md:p-6">
+                <CardContent className=" md:p-6">
                   <div className="flex items-start justify-between mb-3 md:mb-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                      <div className="h-10 w-10 md:h-12 md:w-12 rounded-sm md:rounded-sm
+                       bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                         <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">

@@ -116,7 +116,7 @@ export default function CategoriesPage() {
     <div className="space-y-6 md:space-y-8">
   
       {/* PAGE HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <div className="p-4 pb-6 sm:pb-0 bg-white dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             Categories
@@ -228,13 +228,13 @@ export default function CategoriesPage() {
       </div>
   
       {/* TABS */}
-      <Tabs defaultValue="expense" className="w-full">
-        <TabsList className="grid grid-cols-2 w-full mb-6">
-          <TabsTrigger value="expense" className="flex items-center gap-2">
+      <Tabs defaultValue="expense" className="w-full p-4">
+        <TabsList className="grid grid-cols-2 w-full mb-6 rounded-sm">
+          <TabsTrigger value="expense" className="flex items-center gap-2 rounded-sm">
             <TrendingDown className="h-4 w-4" />
             Expense ({expenseCategories.length})
           </TabsTrigger>
-          <TabsTrigger value="income" className="flex items-center gap-2">
+          <TabsTrigger value="income" className="flex items-center gap-2 rounded-sm">
             <TrendingUp className="h-4 w-4" />
             Income ({incomeCategories.length})
           </TabsTrigger>
@@ -258,9 +258,9 @@ export default function CategoriesPage() {
                 return (
                   <Card
                     key={category.id}
-                    className="hover:shadow-md transition-all group"
+                    className="rounded-sm hover:shadow-md transition-all group"
                   >
-                    <CardContent className="p-4 md:p-5">
+                    <CardContent className="md:p-5">
                       <div className="flex items-start justify-between mb-3 md:mb-4">
                         <div className="
                           h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl 
@@ -335,9 +335,9 @@ export default function CategoriesPage() {
                 return (
                   <Card
                     key={category.id}
-                    className="hover:shadow-md transition-all group"
+                    className="hover:shadow-md transition-all group rounded-sm"
                   >
-                    <CardContent className="p-4 md:p-5">
+                    <CardContent className=" md:p-5">
                       <div className="flex items-start justify-between mb-3 md:mb-4">
                         <div className="
                           h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl 

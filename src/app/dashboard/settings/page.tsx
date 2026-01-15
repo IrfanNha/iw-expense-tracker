@@ -109,14 +109,14 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <div className="p-4 pb-10 bg-white dark:bg-card dark:md:bg-background">
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground mt-1">
           Manage your account settings
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs defaultValue="profile" className="p-4 w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />

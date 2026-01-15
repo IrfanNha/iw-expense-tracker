@@ -118,8 +118,8 @@ export default function DashboardLayout({
 
   if (isMobile) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <header className=" p-4">
+      <div className="flex min-h-screen flex-col bg-muted-foreground/5">
+        <header className="p-4 bg-white dark:bg-card">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Logo width={24} height={24} />
@@ -147,7 +147,7 @@ export default function DashboardLayout({
             </div>
           </div>
         </header>
-        <main className="flex-1 p-4 pb-20 md:pb-4">{children}</main>
+        <main className="flex-1 pb-20 md:pb-4">{children}</main>
         <MobileBottomNav />
       </div>
     );

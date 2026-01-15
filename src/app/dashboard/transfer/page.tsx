@@ -68,7 +68,7 @@ export default function TransferPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="p-4 pb-6 sm:pb-0 bg-white dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Transfers</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-1">
@@ -77,7 +77,7 @@ export default function TransferPage() {
         </div>
         <TransferForm
           trigger={
-            <Button size="sm" className="gap-2">
+            <Button size="sm" className="gap-2 rounded-sm">
               <Plus className="h-4 w-4" />
               New Transfer
             </Button>
@@ -86,9 +86,9 @@ export default function TransferPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 md:py-12 text-muted-foreground text-sm">Loading transfers...</div>
+        <div className="text-center p-4 py-8 md:py-12 text-muted-foreground text-sm">Loading transfers...</div>
       ) : transfers && transfers.length > 0 ? (
-        <div className="space-y-4 md:space-y-6">
+        <div className="p-4 space-y-4 md:space-y-6">
           {Object.entries(groupedTransfers).map(([date, dayTransfers]) => (
             <div key={date} className="space-y-3">
               <div className="flex items-center gap-2 px-2">
@@ -108,8 +108,8 @@ export default function TransferPage() {
                     : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
 
                   return (
-                    <Card key={transfer.id} className="hover:shadow-md transition-all group">
-                      <CardContent className="p-4 md:p-6">
+                    <Card key={transfer.id} className="hover:shadow-md transition-all group rounded-sm">
+                      <CardContent className="md:p-6">
                         <div className="flex items-center justify-between mb-3 md:mb-4">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
