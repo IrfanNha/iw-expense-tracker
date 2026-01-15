@@ -156,7 +156,7 @@ export default function CategoriesPage() {
             {/* FORM */}
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4 md:space-y-5"
+              className="space-y-4 md:space-y-5 "
             >
               {/* TYPE */}
               <Tabs
@@ -228,7 +228,7 @@ export default function CategoriesPage() {
       </div>
   
       {/* TABS */}
-      <Tabs defaultValue="expense" className="w-full p-4">
+      <Tabs defaultValue="expense" className="w-full p-4 bg-white dark:bg-card dark:md:bg-background my-6">
         <TabsList className="grid grid-cols-2 w-full mb-6 rounded-sm">
           <TabsTrigger value="expense" className="flex items-center gap-2 rounded-sm">
             <TrendingDown className="h-4 w-4" />

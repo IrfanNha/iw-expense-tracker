@@ -261,7 +261,7 @@ export default function AccountsPage() {
           Loading accounts...
         </div>
       ) : accounts && accounts.length > 0 ? (
-        <div className="p-4 grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="p-4 bg-white dark:bg-card dark:md:bg-background grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account) => {
             const IconComponent =
               (account.icon && Icons[account.icon as keyof typeof Icons]
