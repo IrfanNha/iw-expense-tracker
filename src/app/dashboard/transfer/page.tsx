@@ -68,7 +68,7 @@ export default function TransferPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="p-4 pb-6 sm:pb-0 bg-white dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="p-4 pb-6 sm:pb-0 bg-white sm:bg-transparent dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Transfers</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-1">

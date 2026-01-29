@@ -109,7 +109,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div className="p-4 pb-10 bg-white dark:bg-card dark:md:bg-background">
+      <div className="p-4 pb-10 bg-white sm:bg-transparent dark:bg-card dark:md:bg-background">
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground mt-1">
           Manage your account settings
@@ -117,23 +117,23 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="p-4 w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 rounded-sm">
+          <TabsTrigger value="profile" className="flex items-center gap-2 rounded-sm">
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
+          <TabsTrigger value="security" className="flex items-center gap-2 rounded-sm">
             <Lock className="h-4 w-4" />
             Security
           </TabsTrigger>
-          <TabsTrigger value="data" className="flex items-center gap-2">
+          <TabsTrigger value="data" className="flex items-center gap-2 rounded-sm ">
             <Database className="h-4 w-4" />
             Data
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-6">
-          <Card>
+          <Card className="rounded-sm">
             <CardHeader>
               <CardTitle>Update Name</CardTitle>
               <CardDescription>Change your display name</CardDescription>
@@ -176,7 +176,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="security" className="mt-6">
-          <Card>
+          <Card className="rounded-sm">
             <CardHeader>
               <CardTitle>Update PIN</CardTitle>
               <CardDescription>
@@ -490,7 +490,7 @@ function DataManagementTab() {
   return (
     <div className="space-y-6">
       {/* Export Section */}
-      <Card>
+      <Card className="rounded-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
@@ -503,7 +503,7 @@ function DataManagementTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border bg-muted/50 p-4">
+          <div className="rounded-sm border bg-muted/50 p-4">
             <p className="text-sm text-muted-foreground mb-2">
               The exported file will include:
             </p>
@@ -635,7 +635,7 @@ function DataManagementTab() {
               </DialogHeader>
               {previewData && (
                 <div className="space-y-4 py-4">
-                  <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+                  <div className="rounded-sm border bg-muted/50 p-4 space-y-2">
                     <p className="text-sm font-medium">Backup Information</p>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>Version: {previewData.version}</p>
@@ -645,7 +645,7 @@ function DataManagementTab() {
                       </p>
                     </div>
                   </div>
-                  <div className="rounded-lg border p-4 space-y-2">
+                  <div className="rounded-sm border p-4 space-y-2">
                     <p className="text-sm font-medium">Data Summary</p>
                     <div className="text-sm space-y-1">
                       <p>Accounts: {previewData.accounts}</p>
@@ -654,7 +654,7 @@ function DataManagementTab() {
                       <p>Transfers: {previewData.transfers}</p>
                     </div>
                   </div>
-                  <div className="rounded-lg border bg-amber-500/10 border-amber-500/20 p-3">
+                  <div className="rounded-sm border bg-amber-500/10 border-amber-500/20 p-3">
                     <p className="text-xs text-amber-700 dark:text-amber-300">
                       Mode:{" "}
                       <strong>
@@ -682,7 +682,7 @@ function DataManagementTab() {
           </Dialog>
 
           {importResult && (
-            <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4">
+            <div className="rounded-sm border border-green-500/20 bg-green-500/10 p-4">
               <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-2 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
                 Import Successful!
@@ -714,12 +714,12 @@ function DataManagementTab() {
           )}
 
           {error && (
-            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+            <div className="rounded-sm border border-destructive/20 bg-destructive/10 p-4">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          <div className="rounded-lg border bg-amber-500/10 border-amber-500/20 p-4">
+          <div className="rounded-sm border bg-amber-500/10 border-amber-500/20 p-4">
             <p className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-2">
               ⚠️ Important Notes:
             </p>
@@ -749,7 +749,7 @@ function DataManagementTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+          <div className="rounded-sm border border-destructive/20 bg-destructive/5 p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-destructive mb-1">

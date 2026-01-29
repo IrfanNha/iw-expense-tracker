@@ -116,7 +116,7 @@ export default function CategoriesPage() {
     <div className="space-y-4 md:space-y-8">
   
       {/* PAGE HEADER */}
-      <div className="p-4 pb-6 bg-white dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <div className="p-4 pb-6 bg-white sm:bg-transparent dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             Categories
@@ -228,7 +228,7 @@ export default function CategoriesPage() {
       </div>
   
       {/* TABS */}
-      <Tabs defaultValue="expense" className="w-full p-4 bg-white dark:bg-card dark:md:bg-background my-6">
+      <Tabs defaultValue="expense" className="w-full p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background my-6">
         <TabsList className="grid grid-cols-2 w-full mb-6 rounded-sm">
           <TabsTrigger value="expense" className="flex items-center gap-2 rounded-sm">
             <TrendingDown className="h-4 w-4" />

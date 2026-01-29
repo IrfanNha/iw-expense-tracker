@@ -268,8 +268,8 @@ export default function DashboardPage() {
   return (
     <div className="w-full flex justify-center">
       <div className="w-full max-w-[480px] md:max-w-3xl lg:max-w-[1400px] xl:max-w-[1600px] space-y-3 md:space-y-5 pb-6 md:pb-24  lg:px-8">
-        
-        <div className="bg-white dark:bg-card dark:md:bg-background p-4 mb-12 sm:mb-0 border-b sm:border-0">
+
+        <div className="bg-white dark:bg-card dark:md:bg-background p-4 mb-12 sm:mb-0 border-b sm:border sm:rounded-sm">
           {/* Header & Total Balance */}
         <div className="flex items-start justify-between gap-3 md:gap-6 pt-2">
           <div className="space-y-1 md:space-y-1.5">
@@ -279,7 +279,7 @@ export default function DashboardPage() {
             <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
               {formatCurrency(totalBalance)}
             </p>
-            <p className="text-xs sm:text-sm md:text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm md:text-sm sm:mt-6 text-muted-foreground">
               All accounts
             </p>
           </div>
@@ -353,7 +353,7 @@ export default function DashboardPage() {
         {/* Accounts + Chart & Transactions */}
         <div className="space-y-3 md:space-y-4 md:grid md:grid-cols-[380px_1fr] lg:grid-cols-[420px_1fr] md:gap-5 lg:gap-6">
           {/* Accounts */}
-          <div className="bg-white dark:bg-card dark:md:bg-background p-4 my-6 border-y sm:border-0 space-y-1 md:space-y-3 ">
+          <div className="bg-white h-fit dark:bg-card dark:md:bg-background p-4 my-6 border-y sm:border sm:rounded-sm space-y-1 md:space-y-3 ">
             <div className="flex items-center justify-between">
               <h2 className="text-sm sm:text-base md:text-lg font-semibold">Accounts</h2>
               <Link href="/dashboard/accounts">
