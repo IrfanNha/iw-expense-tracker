@@ -8,7 +8,7 @@
  * - Reporting layer (annual-report.ts) only reads summary tables
  */
 
-import { TxType } from "@prisma/client";
+import { TxType } from "@/generated/prisma/client";
 
 /**
  * Year-Month range for summary operations
