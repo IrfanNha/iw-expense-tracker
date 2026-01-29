@@ -24,6 +24,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         attribute="class"
         defaultTheme="light"
         enableSystem={false}
+        storageKey="expense-tracker-theme"
+        themes={["light", "dark", "green", "blue"]}
       >
         <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
       </ThemeProvider>

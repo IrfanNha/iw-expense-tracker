@@ -13,6 +13,8 @@ import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
+import { PercentageMode, getDefaultModeForPeriod } from "@/types/finance";
+import { PercentageModeToggle } from "@/components/ui/PercentageModeToggle";
 import { Calendar } from "@/components/ui/calendar";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -37,6 +39,11 @@ export default function TransactionsPage() {
   const [selectedDate, setSelectedDate] = React.useState(new Date());
   const [period, setPeriod] = React.useState<Period>("day");
   const [activeTab, setActiveTab] = React.useState<"all" | "income" | "expense">("all");
+  // Percentage mode state with smart default based on period
+  // Monthly → Income-based mode, Daily/Weekly → Cash flow proportion mode
+  const [percentageMode, setPercentageMode] = React.useState<PercentageMode>(
+    () => getDefaultModeForPeriod(period)
+  );
   const [showGrouped, setShowGrouped] = React.useState(true);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -46,6 +53,12 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
   const { data: transactions, isLoading: transactionsLoading } = useTransactions({ limit: 1000 });
   const deleteTransaction = useDeleteTransaction();
+
+  // Auto-switch percentage mode when period changes
+  // Monthly → Mode A (Income-based), Daily/Weekly → Mode B (Cash flow proportion)
+  React.useEffect(() => {
+    setPercentageMode(getDefaultModeForPeriod(period));
+  }, [period]);
 
   // Helpers for period ranges
   const getStartOfDay = (date: Date) => {
@@ -243,7 +256,7 @@ export default function TransactionsPage() {
               <div>
                 <CardTitle className="text-sm md:text-lg font-semibold">
                   {activeTab === "all"
-                    ? "Income vs Expense"
+                    ? "Expense & Savings"
                     : activeTab === "expense"
                     ? "Expense by Category"
                     : "Income by Category"}
@@ -252,6 +265,14 @@ export default function TransactionsPage() {
                   {formatDateRangeDisplay(selectedDate, period)}
                 </CardDescription>
               </div>
+              {/* Percentage Mode Toggle - Only shown for 'all' tab */}
+              {activeTab === "all" && (
+                <PercentageModeToggle
+                  mode={percentageMode}
+                  onModeChange={setPercentageMode}
+                  hasIncome={periodTotals.income > 0}
+                />
+              )}
             </div>
           </CardHeader>
           <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
@@ -260,9 +281,13 @@ export default function TransactionsPage() {
                 <Spinner className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
               </div>
             ) : activeTab === "all" ? (
+              // Dual-mode financial visualization
+              // Mode A (Income-based): Shows expense and savings as % of income
+              // Mode B (Cash flow proportion): Shows proportion of total cash flow
               <IncomeExpenseChart
                 income={periodTotals.income}
                 expense={periodTotals.expense}
+                mode={percentageMode}
               />
             ) : categoryData.length > 0 ? (
               <DonutChart

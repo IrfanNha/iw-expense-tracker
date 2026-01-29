@@ -19,7 +19,7 @@ const themes = [
 ] as const;
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -34,9 +34,24 @@ export function ThemeToggle() {
     );
   }
 
-  const currentThemeValue = theme || "light";
+  // Use resolvedTheme as fallback to ensure we always have a valid theme
+  const currentThemeValue = theme || resolvedTheme || "light";
   const currentTheme = themes.find((t) => t.value === currentThemeValue) || themes[0];
   const CurrentIcon = currentTheme.icon;
+
+  const handleThemeChange = (newTheme: string) => {
+    // Force theme change by first setting to a different theme if necessary
+    // This ensures the class is properly removed and re-added
+    if (theme === newTheme) return;
+    
+    setTheme(newTheme);
+    
+    // Force a small delay to ensure DOM updates
+    setTimeout(() => {
+      // Trigger a reflow to ensure CSS is recalculated
+      document.documentElement.offsetHeight;
+    }, 0);
+  };
 
   return (
     <DropdownMenu>
@@ -49,14 +64,16 @@ export function ThemeToggle() {
       <DropdownMenuContent align="end">
         {themes.map((themeOption) => {
           const Icon = themeOption.icon;
+          const isActive = currentThemeValue === themeOption.value;
           return (
             <DropdownMenuItem
               key={themeOption.value}
-              onClick={() => setTheme(themeOption.value)}
-              className="flex items-center gap-2"
+              onClick={() => handleThemeChange(themeOption.value)}
+              className={`flex items-center gap-2 ${isActive ? "bg-accent" : ""}`}
             >
               <Icon className="h-4 w-4" />
               <span>{themeOption.label}</span>
+              {isActive && <span className="ml-auto text-xs">✓</span>}
             </DropdownMenuItem>
           );
         })}
@@ -64,4 +81,3 @@ export function ThemeToggle() {
     </DropdownMenu>
   );
 }
-

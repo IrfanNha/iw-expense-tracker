@@ -12,8 +12,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 enum AccountType {
   CASH
   BANK
@@ -25,46 +23,52 @@ enum AccountType {
 enum TxType {
   INCOME
   EXPENSE
-  TRANSFER_DEBIT     // uang keluar karena transfer
-  TRANSFER_CREDIT    // uang masuk karena transfer
+  TRANSFER_DEBIT // uang keluar karena transfer
+  TRANSFER_CREDIT // uang masuk karena transfer
 }
 
-/* ============================================================
-   USER
-============================================================ */
+/**
+ * ============================================================
+ * USER
+ * ============================================================
+ */
 
 model User {
-  id          String       @id @default(cuid())
-  name        String?
-  email       String?      @unique
-  hashedPin   String?      // untuk login PIN
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?  @unique
+  hashedPin String? // untuk login PIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  accounts      Account[]
-  categories    Category[]
-  transactions  Transaction[]
-  transfers     Transfer[]
+  accounts                 Account[]
+  categories               Category[]
+  transactions             Transaction[]
+  transfers                Transfer[]
+  monthlySummaries         MonthlySummary[]
+  monthlyCategorySummaries MonthlyCategorySummary[]
 
   @@index([email])
 }
 
-/* ============================================================
-   ACCOUNT
-============================================================ */
+/**
+ * ============================================================
+ * ACCOUNT
+ * ============================================================
+ */
 
 model Account {
-  id          String        @id @default(cuid())
-  userId      String
-  name        String
-  type        AccountType   @default(CASH)
-  currency    String        @default("IDR")
-  icon        String?
-  balance     Int           @default(0) // integer-based for accuracy
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id        String      @id @default(cuid())
+  userId    String
+  name      String
+  type      AccountType @default(CASH)
+  currency  String      @default("IDR")
+  icon      String?
+  balance   Int         @default(0) // integer-based for accuracy
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   outgoingTransfers Transfer[] @relation("TransferFrom")
@@ -74,45 +78,50 @@ model Account {
   @@index([type])
 }
 
-/* ============================================================
-   CATEGORY
-============================================================ */
+/**
+ * ============================================================
+ * CATEGORY
+ * ============================================================
+ */
 
 model Category {
-  id          String      @id @default(cuid())
-  userId      String
-  name        String
-  isIncome    Boolean     @default(false)
-  icon        String?
-  createdAt   DateTime    @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  isIncome  Boolean  @default(false)
+  icon      String?
+  createdAt DateTime @default(now())
 
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions             Transaction[]
+  monthlyCategorySummaries MonthlyCategorySummary[]
 
   @@index([userId])
   @@index([isIncome])
 }
 
-/* ============================================================
-   TRANSACTION
-============================================================ */
+/**
+ * ============================================================
+ * TRANSACTION
+ * ============================================================
+ */
 
 model Transaction {
-  id          String     @id @default(cuid())
-  userId      String
-  accountId   String
-  categoryId  String?
-  amount      Int         // always positive
-  type        TxType
-  note        String?
-  occurredAt  DateTime    @default(now())
-  transferId  String?
-  createdAt   DateTime    @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  accountId  String
+  categoryId String?
+  amount     Int // always positive
+  type       TxType
+  note       String?
+  occurredAt DateTime @default(now())
+  transferId String?
+  createdAt  DateTime @default(now())
 
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category    Category?   @relation(fields: [categoryId], references: [id])
-  transfer    Transfer?   @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id])
+  transfer Transfer? @relation(fields: [transferId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([accountId])
@@ -122,27 +131,95 @@ model Transaction {
   @@index([occurredAt])
 }
 
-/* ============================================================
-   TRANSFER
-============================================================ */
+/**
+ * ============================================================
+ * TRANSFER
+ * ============================================================
+ */
 
 model Transfer {
-  id            String      @id @default(cuid())
+  id            String   @id @default(cuid())
   userId        String
   fromAccountId String
   toAccountId   String
-  amount        Int         // always positive
+  amount        Int // always positive
   note          String?
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime @default(now())
 
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  fromAccount   Account     @relation("TransferFrom", fields: [fromAccountId], references: [id])
-  toAccount     Account     @relation("TransferTo", fields: [toAccountId], references: [id])
+  fromAccount Account @relation("TransferFrom", fields: [fromAccountId], references: [id])
+  toAccount   Account @relation("TransferTo", fields: [toAccountId], references: [id])
 
-  transactions  Transaction[]
+  transactions Transaction[]
 
   @@index([userId])
   @@index([fromAccountId])
   @@index([toAccountId])
+}
+
+/**
+ * ============================================================
+ * MONTHLY SUMMARIES
+ * ============================================================
+ */
+
+model MonthlySummary {
+  id     String @id @default(cuid())
+  userId String
+  year   Int
+  month  Int // 1–12
+
+  income  Int
+  expense Int
+  net     Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year, month])
+  @@index([userId, year])
+}
+
+model MonthlyCategorySummary {
+  id     String @id @default(cuid())
+  userId String
+  year   Int
+  month  Int
+
+  categoryId String
+  amount     Int
+  type       TxType // INCOME / EXPENSE
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([userId, year, month, categoryId])
+  @@index([userId, year, month])
+}
+
+/**
+ * ============================================================
+ * MONTHLY SUMMARIES
+ * ============================================================
+ */
+
+model AnnualSummary {
+  id     String @id @default(cuid())
+  userId String
+  year   Int
+
+  income  Int
+  expense Int
+  net     Int
+
+  expenseRate Float
+  savingRate  Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, year])
 }

@@ -35,6 +35,8 @@ import * as React from "react";
 import Link from "next/link";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
+import { PercentageMode, getDefaultModeForPeriod } from "@/types/finance";
+import { PercentageModeToggle } from "@/components/ui/PercentageModeToggle";
 import { Calendar } from "@/components/ui/calendar";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -73,6 +75,11 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = React.useState<"all" | "income" | "expense">(
     "all"
   );
+  // Percentage mode state with smart default based on period
+  // Monthly → Income-based mode, Daily/Weekly → Cash flow proportion mode
+  const [percentageMode, setPercentageMode] = React.useState<PercentageMode>(
+    () => getDefaultModeForPeriod(period)
+  );
   const { data: transactions, isLoading: transactionsLoading } =
     useTransactions({ limit: 1000 });
   const deleteTransaction = useDeleteTransaction();
@@ -86,6 +93,12 @@ export default function DashboardPage() {
 
   const totalBalance =
     accounts?.reduce((sum, acc) => sum + acc.balance, 0) || 0;
+
+  // Auto-switch percentage mode when period changes
+  // Monthly → Mode A (Income-based), Daily/Weekly → Mode B (Cash flow proportion)
+  React.useEffect(() => {
+    setPercentageMode(getDefaultModeForPeriod(period));
+  }, [period]);
 
   // Format date for display
   const formatDateDisplay = (date: Date) => {
@@ -430,7 +443,7 @@ export default function DashboardPage() {
                   <div>
                     <CardTitle className="text-sm md:text-lg font-semibold">
                       {activeTab === "all"
-                        ? "Income vs Expense"
+                        ? "Expense & Savings"
                         : activeTab === "expense"
                         ? "Expense by Category"
                         : "Income by Category"}
@@ -439,6 +452,14 @@ export default function DashboardPage() {
                       {formatDateRangeDisplay(selectedDate, period)}
                     </CardDescription>
                   </div>
+                  {/* Percentage Mode Toggle - Only shown for 'all' tab */}
+                  {activeTab === "all" && (
+                    <PercentageModeToggle
+                      mode={percentageMode}
+                      onModeChange={setPercentageMode}
+                      hasIncome={periodTotals.income > 0}
+                    />
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
@@ -447,9 +468,13 @@ export default function DashboardPage() {
                     <Spinner className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                   </div>
                 ) : activeTab === "all" ? (
+                  // Dual-mode financial visualization
+                  // Mode A (Income-based): Shows expense and savings as % of income
+                  // Mode B (Cash flow proportion): Shows proportion of total cash flow
                   <IncomeExpenseChart
                     income={periodTotals.income}
                     expense={periodTotals.expense}
+                    mode={percentageMode}
                   />
                 ) : categoryData.length > 0 ? (
                   <DonutChart
