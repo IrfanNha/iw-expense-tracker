@@ -108,7 +108,7 @@ export default function TransferPage() {
                     : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
 
                   return (
-                    <Card key={transfer.id} className="hover:shadow-md transition-all group rounded-sm">
+                    <Card key={transfer.id} className="hover:shadow-md transition-all group rounded-sm shadow-none">
                       <CardContent className="md:p-6">
                         <div className="flex items-center justify-between mb-3 md:mb-4">
                           <div className="flex items-center gap-3 flex-1 min-w-0">

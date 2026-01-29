@@ -250,7 +250,7 @@ export default function TransactionsPage() {
       {/* Chart and Transactions */}
       <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-[420px_1fr]">
         {/* Chart */}
-        <Card className="border rounded-sm">
+        <Card className="border rounded-sm shadow-none">
           <CardHeader className="px-3 py-2.5 md:px-6 md:py-4">
             <div className="flex items-center justify-between">
               <div>
@@ -306,7 +306,7 @@ export default function TransactionsPage() {
         </Card>
 
         {/* Transaction List */}
-        <Card className="border rounded-sm">
+        <Card className="border rounded-sm shadow-none">
           <CardHeader className="px-3 py-2.5 md:px-6 md:py-4 space-y-3 md:space-y-4">
             <div className="flex items-center justify-between">
               <div>
