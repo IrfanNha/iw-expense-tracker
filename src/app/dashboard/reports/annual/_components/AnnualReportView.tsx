@@ -116,108 +116,106 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
   const isDeficit = reportData.totals.expense > reportData.totals.income;
 
   return (
-    <div className="container mx-auto px-3 py-4 md:px-6 md:py-6 max-w-7xl space-y-4 md:space-y-6">
-      {/* PAGE HEADER */}
-      <div className="space-y-3 md:space-y-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
-            Annual Financial Report
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">
-            Ringkasan kesehatan keuangan tahunan
-          </p>
-        </div>
+    <div className="space-y-4 md:space-y-6">
+      {/* Header Section */}
+      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
+        <div className="flex flex-col gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Annual Financial Report
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              Ringkasan kesehatan keuangan tahunan
+            </p>
+          </div>
 
-        {/* Year and Month Range Selectors */}
-        <Card className="rounded-sm shadow-none">
-          <CardContent className="pt-6">
-            {/* Resync notification */}
-            {resyncMessage && (
-              <Alert
-                variant={resyncMessage.type === "error" ? "destructive" : "default"}
-                className="mb-4"
-              >
-                {resyncMessage.type === "success" ? (
-                  <Info className="h-4 w-4" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4" />
-                )}
-                <AlertDescription className="text-xs md:text-sm">
-                  {resyncMessage.text}
-                </AlertDescription>
-              </Alert>
-            )}
+          {/* Resync notification */}
+          {resyncMessage && (
+            <Alert
+              variant={resyncMessage.type === "error" ? "destructive" : "default"}
+              className="mb-0"
+            >
+              {resyncMessage.type === "success" ? (
+                <Info className="h-4 w-4" />
+              ) : (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              <AlertDescription className="text-xs md:text-sm">
+                {resyncMessage.text}
+              </AlertDescription>
+            </Alert>
+          )}
 
-            <div className="flex flex-wrap gap-3 md:gap-4">
-              {/* Year Selector */}
-              <div className="space-y-1.5 flex-1 min-w-[140px]">
-                <label className="text-xs md:text-sm font-medium">Year</label>
-                <Select value={selectedYear.toString()} onValueChange={handleYearChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {yearOptions.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          {/* Year and Month Range Selectors */}
+          <div className="flex flex-wrap gap-3 md:gap-4">
+            {/* Year Selector */}
+            <div className="space-y-1.5 flex-1 min-w-[140px]">
+              <label className="text-xs md:text-sm font-medium">Year</label>
+              <Select value={selectedYear.toString()} onValueChange={handleYearChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Month Range Quick Selects */}
-              <div className="space-y-1.5 flex-1 min-w-[200px]">
-                <label className="text-xs md:text-sm font-medium">Period</label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={fromMonth === 1 && toMonth === 12 ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 text-xs"
-                    onClick={() => handleMonthRangeChange(1, 12)}
-                  >
-                    Full Year
-                  </Button>
-                  <Button
-                    variant={fromMonth === 1 && toMonth === 6 ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 text-xs"
-                    onClick={() => handleMonthRangeChange(1, 6)}
-                  >
-                    H1
-                  </Button>
-                  <Button
-                    variant={fromMonth === 7 && toMonth === 12 ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 text-xs"
-                    onClick={() => handleMonthRangeChange(7, 12)}
-                  >
-                    H2
-                  </Button>
-                </div>
-              </div>
-
-              {/* Resync Button */}
-              <div className="space-y-1.5 shrink-0">
-                <label className="text-xs md:text-sm font-medium opacity-0 pointer-events-none">Actions</label>
+            {/* Month Range Quick Selects */}
+            <div className="space-y-1.5 flex-1 min-w-[200px]">
+              <label className="text-xs md:text-sm font-medium">Period</label>
+              <div className="flex gap-2">
                 <Button
-                  onClick={handleResync}
-                  disabled={isResyncing}
-                  variant="outline"
-                  size="default"
-                  className="w-full md:w-auto gap-2"
+                  variant={fromMonth === 1 && toMonth === 12 ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => handleMonthRangeChange(1, 12)}
                 >
-                  <RefreshCw className={`h-4 w-4 ${isResyncing ? "animate-spin" : ""}`} />
-                  {isResyncing ? "Resyncing..." : "Resync Data"}
+                  Full Year
+                </Button>
+                <Button
+                  variant={fromMonth === 1 && toMonth === 6 ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => handleMonthRangeChange(1, 6)}
+                >
+                  H1
+                </Button>
+                <Button
+                  variant={fromMonth === 7 && toMonth === 12 ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => handleMonthRangeChange(7, 12)}
+                >
+                  H2
                 </Button>
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground mt-3">
-              Showing: {MONTH_NAMES[fromMonth - 1]} - {MONTH_NAMES[toMonth - 1]} {selectedYear}
-            </p>
-          </CardContent>
-        </Card>
+            {/* Resync Button */}
+            <div className="space-y-1.5 shrink-0">
+              <label className="text-xs md:text-sm font-medium opacity-0 pointer-events-none">Actions</label>
+              <Button
+                onClick={handleResync}
+                disabled={isResyncing}
+                variant="outline"
+                size="default"
+                className="w-full md:w-auto gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isResyncing ? "animate-spin" : ""}`} />
+                {isResyncing ? "Resyncing..." : "Resync Data"}
+              </Button>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Showing: {MONTH_NAMES[fromMonth - 1]} - {MONTH_NAMES[toMonth - 1]} {selectedYear}
+          </p>
+        </div>
       </div>
 
       {!hasData ? (
@@ -235,7 +233,7 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
       ) : (
         <>
           {/* EXECUTIVE SUMMARY */}
-          <div>
+          <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
             <h2 className="text-lg md:text-xl font-semibold mb-3">Executive Summary</h2>
             <div className="grid gap-3 md:gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Income Card */}
@@ -305,7 +303,7 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
           </div>
 
           {/* MONTHLY TREND SECTION */}
-          <Card className="rounded-sm shadow-none">
+          <Card className="border rounded-none sm:rounded-sm shadow-none">
             <CardHeader>
               <CardTitle className="text-lg">Monthly Trend</CardTitle>
               <CardDescription className="text-xs">
@@ -339,7 +337,7 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
 
           {/* CATEGORY INSIGHT SECTION */}
           {reportData.topCategories.length > 0 && (
-            <Card className="rounded-sm shadow-none">
+            <Card className="border rounded-none sm:rounded-sm shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg">Top Expense Categories</CardTitle>
                 <CardDescription className="text-xs">
@@ -396,7 +394,7 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
           )}
 
           {/* INSIGHT PANEL */}
-          <Card className="rounded-sm shadow-none">
+          <Card className="border rounded-none sm:rounded-sm shadow-none">
             <CardHeader>
               <CardTitle className="text-lg">Financial Insights</CardTitle>
               <CardDescription className="text-xs">
