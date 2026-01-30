@@ -366,7 +366,7 @@ export default function DashboardPage() {
         {/* Accounts + Chart & Transactions */}
         <div className="space-y-3 md:space-y-4 md:grid md:grid-cols-[380px_1fr] lg:grid-cols-[420px_1fr] md:gap-5 lg:gap-6">
           {/* Accounts */}
-          <div className="bg-white h-fit dark:bg-card dark:md:bg-background p-4 my-6 border-y sm:border sm:rounded-sm space-y-1 md:space-y-3 ">
+          <div className="bg-white h-fit dark:bg-card dark:md:bg-background p-4  border-y sm:border sm:rounded-sm space-y-1 md:space-y-3 ">
             <div className="flex items-center justify-between">
               <h2 className="text-sm sm:text-base md:text-lg font-semibold">Accounts</h2>
               <Link href="/dashboard/accounts">
@@ -437,7 +437,7 @@ export default function DashboardPage() {
           {/* Chart & Transactions */}
           <div className="space-y-3 md:space-y-5">
             {/* Chart Section */}
-            <Card className="border-x-0 sm:border rounded-none sm:rounded-sm bg-white dark:bg-card dark:md:bg-background  my-6 shadow-none">
+            <Card className="border-x-0 sm:border rounded-none sm:rounded-sm bg-white dark:bg-card dark:md:bg-background shadow-none">
               <CardHeader className="px-3 md:px-6 md:py-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -493,7 +493,7 @@ export default function DashboardPage() {
             </Card>
 
             {/* Transaction List */}
-            <Card className="my-6 sm:my-0 border-x-0 sm:border rounded-none sm:rounded-sm shadow-none">
+            <Card className=" sm:my-0 border-x-0 sm:border rounded-none sm:rounded-sm shadow-none">
               <CardHeader className="px-3 md:px-6 md:py-4 space-y-3 md:space-y-4">
                 <div className="flex items-center justify-between">
                   <div>

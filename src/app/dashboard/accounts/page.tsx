@@ -124,7 +124,7 @@ export default function AccountsPage() {
     <div className="space-y-4 md:space-y-6">
       
       {/* Add Accounts and Total Balance */}
-      <div className="p-4 mb-6 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
+      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
