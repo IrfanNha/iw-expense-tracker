@@ -237,7 +237,7 @@ export default function AccountsPage() {
       </div>
 
       {/* Total Balance Card */}
-      <Card className="rounded-sm bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+      <Card className="shadow-none rounded-sm bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
         <CardContent className="p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -271,7 +271,7 @@ export default function AccountsPage() {
             return (
               <Card
                 key={account.id}
-                className="rounded-sm hover:shadow-md transition-all group"
+                className="shadow-none rounded-sm hover:shadow-md transition-all group"
               >
                 <CardContent className=" md:p-6">
                   <div className="flex items-start justify-between mb-3 md:mb-4">
@@ -319,7 +319,7 @@ export default function AccountsPage() {
           })}
         </div>
       ) : (
-        <Card>
+        <Card className="shadow-none">
           <CardContent className="py-12 md:py-16 text-center">
             <div className="mx-auto h-12 w-12 md:h-16 md:w-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <Wallet className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />

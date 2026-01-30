@@ -68,27 +68,30 @@ export default function TransferPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="p-4 pb-6 sm:pb-0 bg-white sm:bg-transparent dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Transfers</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">
-            Transfer money between your accounts
-          </p>
+      {/* Header */}
+      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Transfers</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              Transfer money between your accounts
+            </p>
+          </div>
+          <TransferForm
+            trigger={
+              <Button size="sm" className="gap-2 rounded-sm">
+                <Plus className="h-4 w-4" />
+                New Transfer
+              </Button>
+            }
+          />
         </div>
-        <TransferForm
-          trigger={
-            <Button size="sm" className="gap-2 rounded-sm">
-              <Plus className="h-4 w-4" />
-              New Transfer
-            </Button>
-          }
-        />
       </div>
 
       {isLoading ? (
         <div className="text-center p-4 py-8 md:py-12 text-muted-foreground text-sm">Loading transfers...</div>
       ) : transfers && transfers.length > 0 ? (
-        <div className="p-4 space-y-4 md:space-y-6">
+        <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background space-y-4 md:space-y-6">
           {Object.entries(groupedTransfers).map(([date, dayTransfers]) => (
             <div key={date} className="space-y-3">
               <div className="flex items-center gap-2 px-2">
@@ -108,24 +111,24 @@ export default function TransferPage() {
                     : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
 
                   return (
-                    <Card key={transfer.id} className="hover:shadow-md transition-all group rounded-sm shadow-none">
-                      <CardContent className="md:p-6">
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
+                    <Card key={transfer.id} className="shadow-none hover:shadow-md transition-all group rounded-sm">
+                      <CardContent className="p-3 md:p-6">
+                        <div className="flex items-center justify-between mb-2 md:mb-3">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <div className="h-10 w-10 md:h-12 md:w-12 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
                               <ArrowLeftRight className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-base md:text-lg">Transfer</h3>
+                              <h3 className="font-semibold text-sm md:text-base">Transfer</h3>
                               {transfer.note && (
-                                <p className="text-xs md:text-sm text-muted-foreground mt-1 truncate">{transfer.note}</p>
+                                <p className="text-xs md:text-sm text-muted-foreground mt-0.5 truncate">{transfer.note}</p>
                               )}
                             </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 md:h-8 md:w-8 md:opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            className="h-7 w-7 md:h-8 md:w-8 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                             onClick={() => handleDelete(transfer.id)}
                           >
                             <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
@@ -134,7 +137,7 @@ export default function TransferPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 pt-3 md:pt-4 border-t">
                           <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                             <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                              <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                              <div className="h-9 w-9 md:h-10 md:w-10 rounded-sm bg-red-500/10 flex items-center justify-center shrink-0">
                                 <FromIcon className="h-4 w-4 md:h-5 md:w-5 text-red-600" />
                               </div>
                               <div className="min-w-0">
@@ -142,9 +145,9 @@ export default function TransferPage() {
                                 <p className="font-semibold text-sm md:text-base truncate">{transfer.fromAccount?.name || "Unknown"}</p>
                               </div>
                             </div>
-                            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
+                            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground shrink-0" />
                             <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                              <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                              <div className="h-9 w-9 md:h-10 md:w-10 rounded-sm bg-green-500/10 flex items-center justify-center shrink-0">
                                 <ToIcon className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
                               </div>
                               <div className="min-w-0">
@@ -153,11 +156,11 @@ export default function TransferPage() {
                               </div>
                             </div>
                           </div>
-                          <div className="text-left sm:text-right flex-shrink-0">
-                            <p className="text-xl md:text-2xl font-bold">
+                          <div className="text-left sm:text-right shrink-0">
+                            <p className="text-lg md:text-xl font-bold">
                               {formatCurrency(transfer.amount, transfer.fromAccount?.currency || "IDR")}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               {new Date(transfer.createdAt).toLocaleTimeString("id-ID", {
                                 hour: "2-digit",
                                 minute: "2-digit",
@@ -174,7 +177,7 @@ export default function TransferPage() {
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="shadow-none">
           <CardContent className="py-12 md:py-16 text-center">
             <div className="mx-auto h-12 w-12 md:h-16 md:w-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <ArrowLeftRight className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />

@@ -111,3 +111,25 @@ export const backupDataSchema = z.object({
   signature: z.string(),
 });
 
+// Bill validators
+export const billSchema = z.object({
+  name: z.string().min(1, "Bill name is required").max(200),
+  categoryId: z.string().optional(),
+  totalAmount: z.number().int().positive("Amount must be positive"),
+  dueDate: z.string().or(z.date()),
+  note: z.string().max(500).optional(),
+  isRecurring: z.boolean().optional(),
+  recurrence: z.string().optional(),
+});
+
+export const payBillSchema = z.object({
+  billId: z.string().cuid("Invalid bill ID"),
+  accountId: z.string().cuid("Invalid account ID"),
+  amount: z.number().int().positive("Payment amount must be positive"),
+  note: z.string().max(500).optional(),
+});
+
+export const updateBillSchema = billSchema.partial().extend({
+  id: z.string().cuid(),
+});
+

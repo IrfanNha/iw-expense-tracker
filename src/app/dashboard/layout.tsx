@@ -24,6 +24,7 @@ import {
   Home,
   Settings,
   FileText,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -36,6 +37,7 @@ const navItems = [
   { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
   { href: "/dashboard/categories", label: "Categories", icon: CreditCard },
   { href: "/dashboard/transactions", label: "Transactions", icon: TrendingUp },
+  { href: "/dashboard/bills", label: "Bills", icon: Receipt },
   { href: "/dashboard/reports/annual", label: "Annual Report", icon: FileText },
   { href: "/dashboard/transfer", label: "Transfer", icon: ArrowLeftRight },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },

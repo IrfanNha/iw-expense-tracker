@@ -44,3 +44,9 @@ export function parseInputToCents(input: string): number {
   return toCents(cleaned);
 }
 
+// Convert cents to display format (e.g., 12345 -> "123.45")
+export function formatCentsToDisplay(cents: number): string {
+  const amount = cents / 100;
+  return amount.toString();
+}
+

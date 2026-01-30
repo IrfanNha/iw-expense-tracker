@@ -10,12 +10,13 @@ import {
   CreditCard,
   ArrowLeftRight,
   Settings,
+  Receipt,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
-  { href: "/dashboard/categories", label: "Categories", icon: CreditCard },
+  { href: "/dashboard/bills", label: "Bills", icon: Receipt },
   { href: "/dashboard/transfer", label: "Transfer", icon: ArrowLeftRight },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];

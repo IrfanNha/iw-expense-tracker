@@ -238,19 +238,21 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-4 sm:space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="p-4 pb-6 bg-white sm:bg-transparent dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Transactions</h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-0.5 sm:mt-1">
-            View and manage all your transactions
-          </p>
+      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Transactions</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              View and manage all your transactions
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Chart and Transactions */}
       <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-[420px_1fr]">
         {/* Chart */}
-        <Card className="border rounded-none sm:rounded-sm shadow-none">
+        <Card className="border rounded-none sm:rounded-sm shadow-none hover:shadow-md transition-shadow">
           <CardHeader className="px-3 py-2.5 md:px-6 md:py-4">
             <div className="flex items-center justify-between">
               <div>

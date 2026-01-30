@@ -113,130 +113,136 @@ export default function CategoriesPage() {
   const expenseCategories = categories?.filter((cat) => !cat.isIncome) || [];
 
   return (
-    <div className="space-y-4 md:space-y-8">
+    <div className="space-y-4 md:space-y-6">
   
       {/* PAGE HEADER */}
-      <div className="p-4 bg-white sm:bg-transparent dark:bg-card dark:md:bg-background flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Categories
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">
-            Organize your income and expense categories
-          </p>
-        </div>
+      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Categories
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              Organize your income and expense categories
+            </p>
+          </div>
   
-        <Dialog
-          open={open}
-          onOpenChange={(o) => {
-            setOpen(o);
-            if (!o) {
-              setEditingId(null);
-              form.reset();
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Category
-            </Button>
-          </DialogTrigger>
+          <Dialog
+            open={open}
+            onOpenChange={(o) => {
+              setOpen(o);
+              if (!o) {
+                setEditingId(null);
+                form.reset();
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2 rounded-sm">
+                <Plus className="h-4 w-4" />
+                Add Category
+              </Button>
+            </DialogTrigger>
   
-          <DialogContent className="max-w-md min-h-screen max-h-screen md:max-h-[90vh] overflow-y-auto rounded-none space-y-4 md:space-y-5">
-            <DialogHeader>
-              <DialogTitle>
-                {editingId ? "Edit Category" : "Create Category"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingId ? "Update category details" : "Add a new category"}
-              </DialogDescription>
-            </DialogHeader>
+            <DialogContent className="max-w-md min-h-screen max-h-screen md:max-h-[90vh] overflow-y-auto rounded-none space-y-4 md:space-y-5">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingId ? "Edit Category" : "Create Category"}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingId ? "Update category details" : "Add a new category"}
+                </DialogDescription>
+              </DialogHeader>
   
-            {/* FORM */}
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4 md:space-y-5 "
-            >
-              {/* TYPE */}
-              <Tabs
-                value={activeTab}
-                onValueChange={(v) => setActiveTab(v as "expense" | "income")}
+              {/* FORM */}
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4 md:space-y-5 "
               >
-                <TabsList className="grid grid-cols-2 w-full bg-accent">
-                  <TabsTrigger value="expense" className="flex items-center gap-2">
-                    <TrendingDown className="h-4 w-4" />
-                    Expense
-                  </TabsTrigger>
-                  <TabsTrigger value="income" className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Income
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-  
-              {/* NAME */}
-              <div className="space-y-2">
-                <Label htmlFor="name">Category Name</Label>
-                <Input
-                  id="name"
-                  {...form.register("name")}
-                  placeholder="e.g., Food, Salary"
-                />
-                {form.formState.errors.name && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.name.message}
-                  </p>
-                )}
-              </div>
-  
-              {/* ICON */}
-              <div className="space-y-2">
-                <Label>Icon</Label>
-                <IconPicker
-                  value={form.watch("icon")}
-                  onValueChange={(value) => form.setValue("icon", value)}
-                />
-              </div>
-  
-              {/* ACTIONS */}
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setOpen(false);
-                    setEditingId(null);
-                    form.reset();
-                  }}
+                {/* TYPE */}
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => setActiveTab(v as "expense" | "income")}
                 >
-                  Cancel
-                </Button>
+                  <TabsList className="grid grid-cols-2 w-full bg-accent">
+                    <TabsTrigger value="expense" className="flex items-center gap-2">
+                      <TrendingDown className="h-4 w-4" />
+                      Expense
+                    </TabsTrigger>
+                    <TabsTrigger value="income" className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Income
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
   
-                <Button
-                  type="submit"
-                  disabled={
-                    createCategory.isPending || updateCategory.isPending
-                  }
-                >
-                  {editingId ? "Update" : "Create"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                {/* NAME */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">Category Name</Label>
+                  <Input
+                    id="name"
+                    {...form.register("name")}
+                    placeholder="e.g., Food, Salary"
+                  />
+                  {form.formState.errors.name && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.name.message}
+                    </p>
+                  )}
+                </div>
+  
+                {/* ICON */}
+                <div className="space-y-2">
+                  <Label>Icon</Label>
+                  <IconPicker
+                    value={form.watch("icon")}
+                    onValueChange={(value) => form.setValue("icon", value)}
+                  />
+                </div>
+  
+                {/* ACTIONS */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setOpen(false);
+                      setEditingId(null);
+                      form.reset();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+  
+                  <Button
+                    type="submit"
+                    disabled={
+                      createCategory.isPending || updateCategory.isPending
+                    }
+                  >
+                    {editingId ? "Update" : "Create"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
   
       {/* TABS */}
       <Tabs defaultValue="expense" className="w-full p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background ">
-        <TabsList className="grid grid-cols-2 w-full mb-6 rounded-sm">
-          <TabsTrigger value="expense" className="flex items-center gap-2 rounded-sm">
+        <TabsList className="grid grid-cols-2 w-full mb-6 h-auto p-1 gap-1">
+          <TabsTrigger value="expense" className="flex items-center gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-background">
             <TrendingDown className="h-4 w-4" />
-            Expense ({expenseCategories.length})
+            <span className="hidden sm:inline">Expense</span>
+            <span className="sm:hidden">Exp</span>
+            <span>({expenseCategories.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="income" className="flex items-center gap-2 rounded-sm">
+          <TabsTrigger value="income" className="flex items-center gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-background">
             <TrendingUp className="h-4 w-4" />
-            Income ({incomeCategories.length})
+            <span className="hidden sm:inline">Income</span>
+            <span className="sm:hidden">Inc</span>
+            <span>({incomeCategories.length})</span>
           </TabsTrigger>
         </TabsList>
   
@@ -244,7 +250,7 @@ export default function CategoriesPage() {
         <TabsContent value="expense" className="space-y-4">
           {expenseCategories.length > 0 ? (
             <div className="
-              grid gap-4 md:gap-5
+              grid gap-3 md:gap-4
               grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
             ">
               {/* === Category Card === */}
@@ -258,22 +264,22 @@ export default function CategoriesPage() {
                 return (
                   <Card
                     key={category.id}
-                    className="rounded-sm hover:shadow-md transition-all group"
+                    className="rounded-sm shadow-none hover:shadow-md transition-all group"
                   >
-                    <CardContent className="md:p-5">
-                      <div className="flex items-start justify-between mb-3 md:mb-4">
+                    <CardContent className="p-3 md:p-5">
+                      <div className="flex items-start justify-between mb-2 md:mb-3">
                         <div className="
-                          h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl 
+                          h-10 w-10 md:h-12 md:w-12 rounded-sm
                           bg-red-500/10 flex items-center justify-center 
                           group-hover:scale-110 transition-transform
-                          flex-shrink-0
+                          shrink-0
                         ">
                           <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-red-600" />
                         </div>
   
                         <div className="
                           flex gap-1 md:opacity-0 group-hover:opacity-100 
-                          transition-opacity flex-shrink-0
+                          transition-opacity shrink-0
                         ">
                           <Button
                             variant="ghost"
@@ -281,7 +287,7 @@ export default function CategoriesPage() {
                             className="h-7 w-7 md:h-8 md:w-8"
                             onClick={() => handleEdit(category)}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
                           </Button>
   
                           <Button
@@ -290,12 +296,12 @@ export default function CategoriesPage() {
                             className="h-7 w-7 md:h-8 md:w-8 text-destructive"
                             onClick={() => handleDelete(category.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                           </Button>
                         </div>
                       </div>
   
-                      <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">
+                      <h3 className="font-semibold text-sm md:text-base truncate">
                         {category.name}
                       </h3>
                     </CardContent>
@@ -304,7 +310,7 @@ export default function CategoriesPage() {
               })}
             </div>
           ) : (
-            <Card>
+            <Card className="shadow-none">
               <CardContent className="py-12 text-center">
                 <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
                   <Tag className="h-8 w-8 text-muted-foreground" />
@@ -322,7 +328,7 @@ export default function CategoriesPage() {
         <TabsContent value="income" className="space-y-4">
           {incomeCategories.length > 0 ? (
             <div className="
-              grid gap-4 md:gap-5
+              grid gap-3 md:gap-4
               grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
             ">
               {incomeCategories.map((category) => {
@@ -335,21 +341,22 @@ export default function CategoriesPage() {
                 return (
                   <Card
                     key={category.id}
-                    className="hover:shadow-md transition-all group rounded-sm"
+                    className="shadow-none hover:shadow-md transition-all group rounded-sm"
                   >
-                    <CardContent className=" md:p-5">
-                      <div className="flex items-start justify-between mb-3 md:mb-4">
+                    <CardContent className="p-3 md:p-5">
+                      <div className="flex items-start justify-between mb-2 md:mb-3">
                         <div className="
-                          h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl 
+                          h-10 w-10 md:h-12 md:w-12 rounded-sm
                           bg-green-500/10 flex items-center justify-center 
                           group-hover:scale-110 transition-transform
+                          shrink-0
                         ">
                           <IconComponent className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
                         </div>
   
                         <div className="
                           flex gap-1 md:opacity-0 group-hover:opacity-100 
-                          transition-opacity
+                          transition-opacity shrink-0
                         ">
                           <Button
                             variant="ghost"
@@ -357,7 +364,7 @@ export default function CategoriesPage() {
                             className="h-7 w-7 md:h-8 md:w-8"
                             onClick={() => handleEdit(category)}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
                           </Button>
   
                           <Button
@@ -366,12 +373,12 @@ export default function CategoriesPage() {
                             className="h-7 w-7 md:h-8 md:w-8 text-destructive"
                             onClick={() => handleDelete(category.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                           </Button>
                         </div>
                       </div>
   
-                      <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">
+                      <h3 className="font-semibold text-sm md:text-base truncate">
                         {category.name}
                       </h3>
                     </CardContent>
@@ -380,7 +387,7 @@ export default function CategoriesPage() {
               })}
             </div>
           ) : (
-            <Card>
+            <Card className="shadow-none">
               <CardContent className="py-12 text-center">
                 <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
                   <Tag className="h-8 w-8 text-muted-foreground" />

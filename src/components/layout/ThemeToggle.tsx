@@ -73,7 +73,7 @@ export function ThemeToggle() {
             >
               <Icon className="h-4 w-4" />
               <span>{themeOption.label}</span>
-              {isActive && <span className="ml-auto text-xs">✓</span>}
+              {isActive}
             </DropdownMenuItem>
           );
         })}

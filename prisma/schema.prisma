@@ -27,6 +27,13 @@ enum TxType {
   TRANSFER_CREDIT // uang masuk karena transfer
 }
 
+enum BillStatus {
+  UNPAID // belum ada pembayaran
+  PARTIAL // sudah dibayar sebagian
+  PAID // lunas
+  OVERDUE // lewat jatuh tempo & belum lunas
+}
+
 /**
  * ============================================================
  * USER
@@ -47,6 +54,7 @@ model User {
   transfers                Transfer[]
   monthlySummaries         MonthlySummary[]
   monthlyCategorySummaries MonthlyCategorySummary[]
+  bills                    Bill[]
 
   @@index([email])
 }
@@ -95,6 +103,7 @@ model Category {
   user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions             Transaction[]
   monthlyCategorySummaries MonthlyCategorySummary[]
+  bills                    Bill[]
 
   @@index([userId])
   @@index([isIncome])
@@ -118,10 +127,11 @@ model Transaction {
   transferId String?
   createdAt  DateTime @default(now())
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id])
-  transfer Transfer? @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  transfer     Transfer?     @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  billPayments BillPayment[]
 
   @@index([userId])
   @@index([accountId])
@@ -183,6 +193,11 @@ model MonthlySummary {
   @@index([userId, year])
 }
 
+/**
+ * ============================================================
+ * MONTHLY CATEGORY SUMMARIES
+ * ============================================================
+ */
 model MonthlyCategorySummary {
   id     String @id @default(cuid())
   userId String
@@ -222,4 +237,58 @@ model AnnualSummary {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, year])
+}
+
+/**
+ * ============================================================
+ * BILLS
+ * ============================================================
+ */
+
+model Bill {
+  id     String @id @default(cuid())
+  userId String
+
+  name        String
+  categoryId  String? // expense category
+  totalAmount Int // total kewajiban
+
+  dueDate DateTime
+  status  BillStatus @default(UNPAID)
+
+  isRecurring Boolean @default(false)
+  recurrence  String? // MONTHLY / WEEKLY (future extension)
+
+  note String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  payments BillPayment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+/**
+ * ============================================================
+ * BILL PAYMENT
+ * ============================================================
+ */
+model BillPayment {
+  id            String @id @default(cuid())
+  billId        String
+  transactionId String
+
+  amount Int
+  paidAt DateTime @default(now())
+
+  bill        Bill        @relation(fields: [billId], references: [id], onDelete: Cascade)
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([billId])
 }

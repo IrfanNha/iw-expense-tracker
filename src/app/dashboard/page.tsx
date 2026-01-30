@@ -279,20 +279,18 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="w-full flex justify-center">
-      <div className="w-full max-w-[480px] md:max-w-3xl lg:max-w-[1400px] xl:max-w-[1600px] space-y-3 md:space-y-5 pb-6 md:pb-24  lg:px-8">
-
-        <div className="bg-white dark:bg-card dark:md:bg-background p-4 mb-12 sm:mb-0 border-b sm:border sm:rounded-sm">
-          {/* Header & Total Balance */}
-        <div className="flex items-start justify-between gap-3 md:gap-6 pt-2">
+    <div className="space-y-4 md:space-y-6">
+      {/* Header & Total Balance */}
+      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
+        <div className="flex items-start justify-between gap-3 md:gap-6">
           <div className="space-y-1 md:space-y-1.5">
             <p className="text-xs sm:text-sm text-muted-foreground">
               Total Balance
             </p>
-            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">
               {formatCurrency(totalBalance)}
             </p>
-            <p className="text-xs sm:text-sm md:text-sm sm:mt-6 text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
               All accounts
             </p>
           </div>
@@ -313,15 +311,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Summary strip */}
-        <Card className="border rounded-sm shadow-none relative top-10 md:top-0">
+        <Card className="border rounded-sm shadow-none mt-4">
           <CardContent className="px-3 py-2 md:px-6 md:py-4">
-            <div className="flex items-center justify-between gap-3 text-[10px] sm:text-xs md:text-base lg:gap-12">
+            <div className="flex items-center justify-between gap-3 text-xs md:text-base">
               <div className="flex flex-col gap-0.5 md:gap-1">
                 <div className="flex items-center gap-1 md:gap-2 text-muted-foreground">
                   <TrendingUp className="h-3 w-3 md:h-5 md:w-5 text-green-600" />
                   <span>Income</span>
                 </div>
-                <span className="text-xs sm:text-sm md:text-xl lg:text-2xl font-semibold text-green-600">
+                <span className="text-xs sm:text-sm md:text-xl font-semibold text-green-600">
                   {reportLoading
                     ? "..."
                     : formatCurrency(report?.income || periodTotals.income)}
@@ -332,7 +330,7 @@ export default function DashboardPage() {
                   <TrendingDown className="h-3 w-3 md:h-5 md:w-5 text-red-600" />
                   <span>Expense</span>
                 </div>
-                <span className="text-xs sm:text-sm md:text-xl lg:text-2xl font-semibold text-red-600">
+                <span className="text-xs sm:text-sm md:text-xl font-semibold text-red-600">
                   {reportLoading
                     ? "..."
                     : formatCurrency(report?.expense || periodTotals.expense)}
@@ -345,7 +343,7 @@ export default function DashboardPage() {
                 </div>
                 <span
                   className={cn(
-                    "text-xs sm:text-sm md:text-xl lg:text-2xl font-semibold",
+                    "text-xs sm:text-sm md:text-xl font-semibold",
                     (report?.net || 0) >= 0 ? "text-green-600" : "text-red-600"
                   )}
                 >
@@ -361,84 +359,84 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        </div>
+      </div>
 
-        {/* Accounts + Chart & Transactions */}
-        <div className="space-y-3 md:space-y-4 md:grid md:grid-cols-[380px_1fr] lg:grid-cols-[420px_1fr] md:gap-5 lg:gap-6">
-          {/* Accounts */}
-          <div className="bg-white h-fit dark:bg-card dark:md:bg-background p-4  border-y sm:border sm:rounded-sm space-y-1 md:space-y-3 ">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm sm:text-base md:text-lg font-semibold">Accounts</h2>
+      {/* Accounts + Chart & Transactions */}
+      <div className="space-y-3 md:space-y-4 md:grid md:grid-cols-[380px_1fr] lg:grid-cols-[420px_1fr] md:gap-4 lg:gap-6">
+        {/* Accounts */}
+        <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm sm:text-base md:text-lg font-semibold">Accounts</h2>
+            <Link href="/dashboard/accounts">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 font-medium text-primary text-xs sm:text-sm md:h-9 md:px-4"
+              >
+                Manage
+              </Button>
+            </Link>
+          </div>
+          {accountsLoading ? (
+            <div className="flex items-center justify-center py-3">
+              <Spinner className="h-6 w-6 text-muted-foreground" />
+            </div>
+          ) : accounts && accounts.length > 0 ? (
+            <div className="space-y-2 md:space-y-3">
+              {accounts.slice(0, 4).map((account) => {
+                const IconComponent =
+                  account.icon && Icons[account.icon as keyof typeof Icons]
+                    ? (Icons[
+                        account.icon as keyof typeof Icons
+                      ] as React.ComponentType<{ className?: string }>)
+                    : Icons.Wallet;
+
+                return (
+                  <div
+                    key={account.id}
+                    className="flex items-center justify-between gap-2 rounded-sm border bg-card px-3 py-2.5 md:px-4 md:py-4"
+                  >
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-full bg-primary/10">
+                        <IconComponent className="h-4 w-4 md:h-6 md:w-6 text-primary" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm sm:text-base font-medium">
+                          {account.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {account.type.toLowerCase().replace("_", " ")}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm sm:text-base md:text-lg font-semibold">
+                        {formatCurrency(account.balance, account.currency)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-3">
+              <p className="text-muted-foreground mb-2 text-sm">
+                No accounts yet
+              </p>
               <Link href="/dashboard/accounts">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2 font-medium text-primary text-xs sm:text-sm md:h-9 md:px-4 md:text-sm"
-                >
-                  Manage
+                <Button size="sm" className="h-8 text-xs">
+                  Create Account
                 </Button>
               </Link>
             </div>
-            {accountsLoading ? (
-              <div className="flex items-center justify-center py-3">
-                <Spinner className="h-6 w-6 text-muted-foreground" />
-              </div>
-            ) : accounts && accounts.length > 0 ? (
-              <div className="space-y-2 md:space-y-3">
-                {accounts.slice(0, 4).map((account) => {
-                  const IconComponent =
-                    account.icon && Icons[account.icon as keyof typeof Icons]
-                      ? (Icons[
-                          account.icon as keyof typeof Icons
-                        ] as React.ComponentType<{ className?: string }>)
-                      : Icons.Wallet;
+          )}
+        </div>
 
-                  return (
-                    <div
-                      key={account.id}
-                      className="flex items-center justify-between gap-2 rounded-sm border bg-card px-3 py-2.5 md:px-4 md:py-4"
-                    >
-                      <div className="flex items-center gap-2 md:gap-3">
-                        <div className="flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-full bg-primary/10">
-                          <IconComponent className="h-4 w-4 md:h-6 md:w-6 text-primary" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm sm:text-base md:text-base font-medium">
-                            {account.name}
-                          </span>
-                          <span className="text-xs md:text-xs text-muted-foreground capitalize">
-                            {account.type.toLowerCase().replace("_", " ")}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm sm:text-base md:text-base lg:text-lg font-semibold">
-                          {formatCurrency(account.balance, account.currency)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-3">
-                <p className="text-muted-foreground mb-2 text-sm">
-                  No accounts yet
-                </p>
-                <Link href="/dashboard/accounts">
-                  <Button size="sm" className="h-8 text-xs">
-                    Create Account
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Chart & Transactions */}
-          <div className="space-y-3 md:space-y-5">
-            {/* Chart Section */}
-            <Card className="border-x-0 sm:border rounded-none sm:rounded-sm bg-white dark:bg-card dark:md:bg-background shadow-none">
-              <CardHeader className="px-3 md:px-6 md:py-4">
+        {/* Chart & Transactions */}
+        <div className="space-y-3 md:space-y-4">
+          {/* Chart Section */}
+          <Card className="border rounded-none sm:rounded-sm bg-white dark:bg-card dark:md:bg-background shadow-none hover:shadow-md transition-shadow">
+            <CardHeader className="px-3 py-2.5 md:px-6 md:py-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-sm md:text-lg font-semibold">
@@ -886,7 +884,7 @@ export default function DashboardPage() {
             }
           />
         </div>
-      </div>
+
 
       {/* Edit Transaction Form */}
       {editingTransaction && (
