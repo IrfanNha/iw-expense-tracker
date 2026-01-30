@@ -157,3 +157,60 @@ export async function ensureMonthlySummariesForRange(
 
   await Promise.all(promises);
 }
+
+/**
+ * Force Rebuild Monthly Summaries
+ * 
+ * MANUAL RESYNC OPERATION
+ * 
+ * Unlike ensureMonthlySummary, this function ALWAYS rebuilds summaries
+ * without checking if they exist. This is used for manual resync operations
+ * when users want to refresh data after making changes.
+ * 
+ * @param userId - User ID
+ * @param year - Year
+ * @param fromMonth - Start month (1-12)
+ * @param toMonth - End month (1-12)
+ * @returns Number of months synced
+ * 
+ * PERFORMANCE:
+ * - Processes months in parallel for speed
+ * - Reuses existing build functions
+ * - Safe to call multiple times (idempotent)
+ * 
+ * SECURITY:
+ * - Only affects the specified user's data
+ * - Uses Prisma's built-in protections
+ * 
+ * @example
+ * // Resync January-June 2026
+ * const count = await forceRebuildMonthlySummaries(userId, 2026, 1, 6);
+ * console.log(`Resynced ${count} months`);
+ */
+export async function forceRebuildMonthlySummaries(
+  userId: string,
+  year: number,
+  fromMonth: number,
+  toMonth: number
+): Promise<number> {
+  // Validate month range
+  const validFromMonth = Math.max(1, Math.min(12, fromMonth));
+  const validToMonth = Math.max(1, Math.min(12, toMonth));
+
+  const promises: Promise<void>[] = [];
+
+  for (let month = validFromMonth; month <= validToMonth; month++) {
+    // Force rebuild both summaries for each month
+    promises.push(
+      Promise.all([
+        buildMonthlySummary(userId, year, month),
+        buildMonthlyCategorySummary(userId, year, month),
+      ]).then(() => {})
+    );
+  }
+
+  await Promise.all(promises);
+
+  // Return the number of months synced
+  return validToMonth - validFromMonth + 1;
+}

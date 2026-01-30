@@ -361,7 +361,7 @@ export default function TransactionsPage() {
             </div>
 
             {/* Date Navigation */}
-            <div className="flex items-center justify-center rounded-full border px-2 py-2 md:px-3 md:py-2.5 bg-muted/30">
+            <div className="flex items-center justify-center rounded-md  border px-2 py-2 md:px-3 md:py-2.5 bg-muted/30">
               <div className="flex items-center gap-1.5 md:gap-2.5">
                 <Button
                   variant="ghost"

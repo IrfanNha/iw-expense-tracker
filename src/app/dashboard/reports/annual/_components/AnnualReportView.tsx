@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatCurrency } from "@/lib/money";
-import { TrendingUp, TrendingDown, AlertTriangle, Info } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, Info, RefreshCw } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -38,6 +38,10 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
   const selectedYear = reportData.year;
   const { fromMonth, toMonth } = reportData.range;
 
+  // Resync state management
+  const [isResyncing, setIsResyncing] = React.useState(false);
+  const [resyncMessage, setResyncMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
+
   // Generate year options (current year and past 5 years)
   const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
@@ -52,6 +56,60 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
     params.set("fromMonth", from.toString());
     params.set("toMonth", to.toString());
     router.push(`?${params.toString()}`);
+  };
+
+  const handleResync = async () => {
+    setIsResyncing(true);
+    setResyncMessage(null);
+
+    try {
+      const response = await fetch("/api/reports/resync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          year: selectedYear,
+          fromMonth,
+          toMonth,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to resync data");
+      }
+
+      // Show success message
+      setResyncMessage({
+        type: "success",
+        text: data.message || "Monthly summaries updated successfully!",
+      });
+
+      // Refresh the page data after successful resync
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
+
+      // Auto-dismiss success message after 3 seconds
+      setTimeout(() => {
+        setResyncMessage(null);
+      }, 3000);
+    } catch (error) {
+      // Show error message
+      setResyncMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "An error occurred while resyncing.",
+      });
+
+      // Auto-dismiss error message after 5 seconds
+      setTimeout(() => {
+        setResyncMessage(null);
+      }, 5000);
+    } finally {
+      setIsResyncing(false);
+    }
   };
 
   const hasData = reportData.totals.income > 0 || reportData.totals.expense >0;
@@ -73,6 +131,23 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
         {/* Year and Month Range Selectors */}
         <Card className="rounded-sm shadow-none">
           <CardContent className="pt-6">
+            {/* Resync notification */}
+            {resyncMessage && (
+              <Alert
+                variant={resyncMessage.type === "error" ? "destructive" : "default"}
+                className="mb-4"
+              >
+                {resyncMessage.type === "success" ? (
+                  <Info className="h-4 w-4" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4" />
+                )}
+                <AlertDescription className="text-xs md:text-sm">
+                  {resyncMessage.text}
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex flex-wrap gap-3 md:gap-4">
               {/* Year Selector */}
               <div className="space-y-1.5 flex-1 min-w-[140px]">
@@ -120,6 +195,21 @@ export function AnnualReportView({ reportData }: AnnualReportViewProps) {
                     H2
                   </Button>
                 </div>
+              </div>
+
+              {/* Resync Button */}
+              <div className="space-y-1.5 shrink-0">
+                <label className="text-xs md:text-sm font-medium opacity-0 pointer-events-none">Actions</label>
+                <Button
+                  onClick={handleResync}
+                  disabled={isResyncing}
+                  variant="outline"
+                  size="default"
+                  className="w-full md:w-auto gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isResyncing ? "animate-spin" : ""}`} />
+                  {isResyncing ? "Resyncing..." : "Resync Data"}
+                </Button>
               </div>
             </div>
 
