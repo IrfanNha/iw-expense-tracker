@@ -55,6 +55,7 @@ model User {
   monthlySummaries         MonthlySummary[]
   monthlyCategorySummaries MonthlyCategorySummary[]
   bills                    Bill[]
+  categoryBudgets          CategoryBudget[]
 
   @@index([email])
 }
@@ -104,6 +105,7 @@ model Category {
   transactions             Transaction[]
   monthlyCategorySummaries MonthlyCategorySummary[]
   bills                    Bill[]
+  categoryBudgets          CategoryBudget[]
 
   @@index([userId])
   @@index([isIncome])
@@ -291,4 +293,31 @@ model BillPayment {
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
   @@index([billId])
+}
+
+/**
+ * ============================================================
+ * CATEGORY BUDGET
+ * ============================================================
+ * Budget pengeluaran berbasis kategori per bulan
+ * Tidak mempengaruhi transaksi atau saldo
+ */
+model CategoryBudget {
+  id         String @id @default(cuid())
+  userId     String
+  categoryId String
+
+  year  Int
+  month Int // 1–12
+
+  amount Int // nilai budget (positive integer, IDR-based)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, year, month])
+  @@index([userId, year, month])
 }

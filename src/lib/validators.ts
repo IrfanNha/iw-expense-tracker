@@ -133,3 +133,11 @@ export const updateBillSchema = billSchema.partial().extend({
   id: z.string().cuid(),
 });
 
+// Category Budget validators
+export const categoryBudgetSchema = z.object({
+  categoryId: z.string().cuid("Invalid category ID"),
+  year: z.number().int(),
+  month: z.number().int().min(1, "Month must be between 1 and 12").max(12, "Month must be between 1 and 12"),
+  amount: z.number().int().positive("Budget amount must be positive"),
+});
+
