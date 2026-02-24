@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [errorDialogOpen, setErrorDialogOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string>("");
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
+  const [accountsExpanded, setAccountsExpanded] = React.useState(false);
 
   const totalBalance =
     accounts?.reduce((sum, acc) => sum + acc.balance, 0) || 0;
@@ -383,7 +384,18 @@ export default function DashboardPage() {
             </div>
           ) : accounts && accounts.length > 0 ? (
             <div className="space-y-2 md:space-y-3">
-              {accounts.slice(0, 4).map((account) => {
+              {(accountsExpanded
+                ? [...accounts].sort((a, b) => {
+                    const order: Record<string, number> = { CASH: 0, BANK: 1, CARD: 2, OTHER: 3, E_WALLET: 4 };
+                    return (order[a.type] ?? 99) - (order[b.type] ?? 99);
+                  })
+                : [...accounts]
+                    .sort((a, b) => {
+                      const order: Record<string, number> = { CASH: 0, BANK: 1, CARD: 2, OTHER: 3, E_WALLET: 4 };
+                      return (order[a.type] ?? 99) - (order[b.type] ?? 99);
+                    })
+                    .slice(0, 5)
+              ).map((account) => {
                 const IconComponent =
                   account.icon && Icons[account.icon as keyof typeof Icons]
                     ? (Icons[
@@ -417,6 +429,18 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
+              {accounts.length > 5 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => setAccountsExpanded((prev) => !prev)}
+                >
+                  {accountsExpanded
+                    ? "Show less"
+                    : `Show ${accounts.length - 5} more account${accounts.length - 5 > 1 ? "s" : ""}`}
+                </Button>
+              )}
             </div>
           ) : (
             <div className="text-center py-3">
