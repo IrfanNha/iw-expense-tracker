@@ -186,7 +186,7 @@ export function TransactionForm({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-2xl max-h-screen md:max-h-[90vh]  overflow-y-auto rounded-none">
+      <DialogContent className="w-full max-w-lg md:max-w-2xl max-h-screen md:max-h-[90vh] overflow-x-hidden overflow-y-auto rounded-none">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Edit Transaction" : "Add Transaction"}</DialogTitle>
           <DialogDescription>
