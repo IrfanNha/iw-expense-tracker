@@ -186,7 +186,7 @@ export function TransactionForm({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="w-full max-w-lg md:max-w-2xl max-h-screen md:max-h-[90vh] overflow-x-hidden overflow-y-auto rounded-none">
+      <DialogContent className="w-full max-w-lg md:max-w-2xl max-h-screen md:max-h-[90vh] overflow-x-hidden overflow-y-auto rounded-sm p-4">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Edit Transaction" : "Add Transaction"}</DialogTitle>
           <DialogDescription>
@@ -220,8 +220,8 @@ export function TransactionForm({
             </TabsTrigger>
           </TabsList>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <TabsContent value={activeTab} className="space-y-6 mt-0">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full min-w-0">
+            <TabsContent value={activeTab} className="space-y-5 mt-0 min-w-0 overflow-hidden">
               {/* Account Selection */}
               <div className="space-y-2">
                 <Label htmlFor="accountId">Account</Label>
@@ -245,41 +245,43 @@ export function TransactionForm({
                 error={form.formState.errors.amount?.message}
               />
 
-              {/* Categories Grid */}
-              <div className="space-y-2">
+              <div className="space-y-1.5 min-w-0">
                 <Label>Category</Label>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-lg">
-                  {filteredCategories.length > 0 ? (
-                    filteredCategories.map((category) => {
-                      const Icon = (category.icon && Icons[category.icon as keyof typeof Icons]
-                        ? Icons[category.icon as keyof typeof Icons]
-                        : Icons.Tag) as unknown as React.ComponentType<{ className?: string }>;
-                      const isSelected = form.watch("categoryId") === category.id;
+                {/* Outer: clips horizontal. Inner: scrolls vertical */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-3 gap-1.5 max-h-[180px] overflow-y-auto p-1.5">
+                    {filteredCategories.length > 0 ? (
+                      filteredCategories.map((category) => {
+                        const Icon = (category.icon && Icons[category.icon as keyof typeof Icons]
+                          ? Icons[category.icon as keyof typeof Icons]
+                          : Icons.Tag) as unknown as React.ComponentType<{ className?: string }>;
+                        const isSelected = form.watch("categoryId") === category.id;
 
-                      return (
-                        <button
-                          key={category.id}
-                          type="button"
-                          onClick={() => form.setValue("categoryId", category.id)}
-                          className={cn(
-                            "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
-                            isSelected
-                              ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
-                              : "hover:bg-accent hover:border-primary/50"
-                          )}
-                        >
-                          <Icon className="h-6 w-6" />
-                          <span className="text-xs font-medium text-center line-clamp-2">
-                            {category.name}
-                          </span>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="col-span-full text-center py-8 text-sm text-muted-foreground">
-                      No {activeTab} categories yet. Create one first!
-                    </div>
-                  )}
+                        return (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => form.setValue("categoryId", category.id)}
+                            className={cn(
+                              "flex flex-col items-center gap-1 p-2 rounded-lg border transition-all w-full min-w-0",
+                              isSelected
+                                ? "bg-primary text-primary-foreground border-primary shadow-md"
+                                : "hover:bg-accent hover:border-primary/50"
+                            )}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            <span className="text-[10px] font-medium text-center line-clamp-2 w-full leading-tight">
+                              {category.name}
+                            </span>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="col-span-full text-center py-6 text-sm text-muted-foreground">
+                        No {activeTab} categories yet.
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {form.formState.errors.categoryId && (
                   <p className="text-sm text-destructive">
@@ -288,12 +290,12 @@ export function TransactionForm({
                 )}
               </div>
 
-              {/* Note */}
-              <div className="space-y-2">
+              <div className="space-y-1.5 min-w-0">
                 <Label htmlFor="note">Note (Optional)</Label>
                 <Input
                   id="note"
                   placeholder="Add a note..."
+                  className="w-full"
                   {...form.register("note")}
                 />
               </div>
@@ -351,7 +353,7 @@ export function TransactionForm({
                           type="button"
                           onClick={() => form.setValue("occurredAt", dateStr)}
                           className={cn(
-                            "px-4 py-2.5 rounded-lg border transition-all text-sm font-medium",
+                            "w-full truncate px-2 py-2.5 rounded-lg border transition-all text-sm font-medium",
                             isSelected
                               ? "bg-primary text-primary-foreground border-primary shadow-md"
                               : "hover:bg-accent hover:border-primary/50"
@@ -366,10 +368,11 @@ export function TransactionForm({
               </div>
             </TabsContent>
 
-            <div className="flex gap-2 justify-end pt-4 border-t">
+            <div className="flex gap-2 justify-end pt-3 border-t">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => {
                   setOpen(false);
                   form.reset();
@@ -379,8 +382,10 @@ export function TransactionForm({
               </Button>
               <Button
                 type="submit"
+                size="sm"
                 disabled={createTransaction.isPending || updateTransaction.isPending}
                 className={cn(
+                  "flex-1 sm:flex-none",
                   activeTab === "income"
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-red-600 hover:bg-red-700"

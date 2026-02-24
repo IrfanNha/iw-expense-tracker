@@ -85,16 +85,16 @@ export function AmountInput({
 
       <div
         className={cn(
-          "rounded-lg border bg-gradient-to-br from-background to-muted/20 transition-all duration-200",
+          "rounded-lg border bg-linear-to-br from-background to-muted/20 transition-all duration-200",
           ringColor
         )}
       >
         {/* Input row */}
-        <div className="flex items-center gap-2 px-3 py-2.5">
-          {/* Currency symbol */}
+        <div className="flex items-center gap-1.5 px-2.5 py-2">
+          {/* Currency symbol — auto-width, shrink-safe */}
           <span
             className={cn(
-              "text-xl font-bold shrink-0 w-8 transition-colors duration-200",
+              "text-base font-bold shrink-0 transition-colors duration-200",
               focused
                 ? hasOperator
                   ? "text-amber-500"
@@ -118,7 +118,7 @@ export function AmountInput({
             onKeyDown={handleKeyDown}
             placeholder="0"
             className={cn(
-              "flex-1 min-w-0 bg-transparent text-xl font-bold outline-none",
+              "flex-1 min-w-0 bg-transparent text-lg font-bold outline-none",
               "placeholder:text-muted-foreground/40 placeholder:font-normal",
               isInvalid
                 ? "text-destructive"
