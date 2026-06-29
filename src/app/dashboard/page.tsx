@@ -937,7 +937,25 @@ export default function DashboardPage() {
                                   items: typeof filteredTransactions;
                                 };
                               })
-                            ).map(([key, group]) => {
+                            )
+                            // Sort groups based on sortOrder so grouped view
+                            // respects the same ordering intent as individual view.
+                            // date-desc keeps Object.entries insertion order
+                            // (which reflects the first-seen transaction per group,
+                            //  already date-sorted from filteredTransactions).
+                            .sort(([, groupA], [, groupB]) => {
+                              if (sortOrder === "az") {
+                                return groupA.label.localeCompare(groupB.label);
+                              }
+                              if (sortOrder === "amount-desc") {
+                                return Math.abs(groupB.total) - Math.abs(groupA.total);
+                              }
+                              if (sortOrder === "amount-asc") {
+                                return Math.abs(groupA.total) - Math.abs(groupB.total);
+                              }
+                              return 0; // date-desc: preserve insertion order
+                            })
+                            .map(([key, group]) => {
                               const isPositive = group.total >= 0;
                               const IconComponent =
                                 group.items[0]?.category?.icon &&
