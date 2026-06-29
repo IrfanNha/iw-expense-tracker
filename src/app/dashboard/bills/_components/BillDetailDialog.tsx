@@ -195,10 +195,7 @@ export function BillDetailDialog({
                 {bill.status !== "PAID" && (
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      onEditClick();
-                      onOpenChange(false);
-                    }}
+                    onClick={onEditClick}
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
