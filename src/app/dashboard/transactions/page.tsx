@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTransactions, useDeleteTransaction, type Transaction } from "@/hooks/useTransactions";
 import { formatCurrency } from "@/lib/money";
-import { Plus, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Trash2, Receipt, Pencil } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Trash2, Receipt, Pencil, ArrowUpDown, ArrowDownAZ, ArrowDownUp } from "lucide-react";
 import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonutChart } from "@/components/charts/DonutChart";
@@ -35,6 +35,54 @@ import {
 
 type Period = "day" | "week" | "month";
 
+/**
+ * Returns a human-readable relative label for the selected date/period.
+ * Returns an empty string when the date is not within ±1 unit of today.
+ */
+function getPeriodLabel(date: Date, period: Period): string {
+  const now = new Date();
+
+  if (period === "day") {
+    // Compare calendar dates only (ignore time)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const selected = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.round(
+      (selected.getTime() - today.getTime()) / 86_400_000
+    );
+    if (diffDays === 0) return "Today";
+    if (diffDays === -1) return "Yesterday";
+    if (diffDays === 1) return "Tomorrow";
+    return "";
+  }
+
+  if (period === "week") {
+    // Get Monday of a given date
+    const getMonday = (d: Date): Date => {
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      return new Date(d.getFullYear(), d.getMonth(), diff);
+    };
+    const thisWeekMs = getMonday(now).getTime();
+    const selectedWeekMs = getMonday(date).getTime();
+    const diffWeeks = Math.round(
+      (selectedWeekMs - thisWeekMs) / (7 * 86_400_000)
+    );
+    if (diffWeeks === 0) return "This week";
+    if (diffWeeks === -1) return "Last week";
+    if (diffWeeks === 1) return "Next week";
+    return "";
+  }
+
+  // month
+  const diffMonths =
+    (date.getFullYear() - now.getFullYear()) * 12 +
+    (date.getMonth() - now.getMonth());
+  if (diffMonths === 0) return "This month";
+  if (diffMonths === -1) return "Last month";
+  if (diffMonths === 1) return "Next month";
+  return "";
+}
+
 export default function TransactionsPage() {
   const [selectedDate, setSelectedDate] = React.useState(new Date());
   const [period, setPeriod] = React.useState<Period>("day");
@@ -51,6 +99,7 @@ export default function TransactionsPage() {
   const [errorDialogOpen, setErrorDialogOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string>("");
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
+  const [sortOrder, setSortOrder] = React.useState<"date-desc" | "az" | "amount-desc" | "amount-asc">("date-desc");
   const { data: transactions, isLoading: transactionsLoading } = useTransactions({ limit: 1000 });
   const deleteTransaction = useDeleteTransaction();
 
@@ -167,12 +216,22 @@ export default function TransactionsPage() {
       (t) => t.type !== "TRANSFER_DEBIT" && t.type !== "TRANSFER_CREDIT"
     );
 
-    // Sort by time (newest first)
-    return filtered.sort(
-      (a, b) =>
-        new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
-    );
-  }, [transactions, selectedDate, activeTab, period]);
+    // Sort based on selected sort order
+    return filtered.sort((a, b) => {
+      if (sortOrder === "az") {
+        const nameA = (a.category?.name || "Other").toLowerCase();
+        const nameB = (b.category?.name || "Other").toLowerCase();
+        return nameA.localeCompare(nameB);
+      } else if (sortOrder === "amount-desc") {
+        return b.amount - a.amount;
+      } else if (sortOrder === "amount-asc") {
+        return a.amount - b.amount;
+      } else {
+        // date-desc (default: newest first)
+        return new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime();
+      }
+    });
+  }, [transactions, selectedDate, activeTab, period, sortOrder]);
 
   // Calculate income and expense totals for selected period
   const periodTotals = React.useMemo(() => {
@@ -320,6 +379,64 @@ export default function TransactionsPage() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-1">
+                {/* Sort Dropdown */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant={sortOrder !== "date-desc" ? "secondary" : "ghost"}
+                      className="h-8 w-8 md:h-9 md:w-9"
+                      title="Sort transactions"
+                    >
+                      <ArrowUpDown className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-1" align="end">
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-xs text-muted-foreground font-medium px-2 py-1">Sort by</p>
+                      <button
+                        onClick={() => setSortOrder("date-desc")}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left",
+                          sortOrder === "date-desc" && "bg-muted font-medium"
+                        )}
+                      >
+                        <ChevronRight className="h-3.5 w-3.5 rotate-90" />
+                        Terbaru
+                      </button>
+                      <button
+                        onClick={() => setSortOrder("az")}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left",
+                          sortOrder === "az" && "bg-muted font-medium"
+                        )}
+                      >
+                        <ArrowDownAZ className="h-3.5 w-3.5" />
+                        A – Z
+                      </button>
+                      <button
+                        onClick={() => setSortOrder("amount-desc")}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left",
+                          sortOrder === "amount-desc" && "bg-muted font-medium"
+                        )}
+                      >
+                        <ArrowDownUp className="h-3.5 w-3.5" />
+                        Nominal Terbesar
+                      </button>
+                      <button
+                        onClick={() => setSortOrder("amount-asc")}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left",
+                          sortOrder === "amount-asc" && "bg-muted font-medium"
+                        )}
+                      >
+                        <ArrowDownUp className="h-3.5 w-3.5 rotate-180" />
+                        Nominal Terkecil
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Button
                   size="icon"
                   variant={showGrouped ? "secondary" : "ghost"}
@@ -396,13 +513,11 @@ export default function TransactionsPage() {
                         "flex flex-col items-center justify-center h-auto py-1.5 px-3 md:px-4 hover:bg-muted rounded-md min-w-[120px] md:min-w-[140px]"
                       )}
                     >
-                      <span className="text-xs md:text-sm text-muted-foreground">
-                        {period === "day"
-                          ? "Today"
-                          : period === "week"
-                          ? "This week"
-                          : "This month"}
-                      </span>
+                      {getPeriodLabel(selectedDate, period) && (
+                        <span className="text-xs md:text-sm text-muted-foreground">
+                          {getPeriodLabel(selectedDate, period)}
+                        </span>
+                      )}
                       <span className="text-sm md:text-base font-semibold">
                         {formatDateRangeDisplay(selectedDate, period)}
                       </span>

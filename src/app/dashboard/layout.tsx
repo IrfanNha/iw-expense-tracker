@@ -70,10 +70,10 @@ export default function DashboardLayout({
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
-      <div className="border-b p-4">
+      <div className="border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <Logo width={28} height={28} />
-          <h1 className="text-lg font-semibold">IW Expense Tracker</h1>
+          <Logo width={26} height={26} />
+          <h1 className="text-base font-semibold">IW Expense Tracker</h1>
         </div>
         {session?.user?.name && (
           <p className="text-sm font-medium mt-1">{session.user.name}</p>
@@ -84,7 +84,7 @@ export default function DashboardLayout({
           </p>
         )}
       </div>
-      <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+      <nav className="flex-1 space-y-0.5 px-3 py-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -93,20 +93,20 @@ export default function DashboardLayout({
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-accent"
               )}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 shrink-0" />
               {item.label}
             </Link>
           );
         })}
       </nav>
-      <div className="border-t p-4 space-y-2 flex-shrink-0">
-        <div className="flex items-center justify-between">
+      <div className="border-t px-3 py-3 space-y-1 flex-shrink-0">
+        <div className="flex items-center justify-between px-1">
           <span className="text-sm text-muted-foreground">Theme</span>
           <ThemeToggle />
         </div>
