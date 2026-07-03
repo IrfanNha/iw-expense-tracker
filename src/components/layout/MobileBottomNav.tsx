@@ -30,21 +30,18 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Logo } from "@/components/layout/Logo";
 import { Separator } from "@/components/ui/separator";
 
-// ─── Bottom Nav (4 primary + 1 "More" trigger) ────────────────────────────────
+// ─── Constants (defined once, outside component) ──────────────────────────────
 const PRIMARY_NAV = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
   { href: "/dashboard/bills", label: "Bills", icon: Receipt },
   { href: "/dashboard/transfer", label: "Transfer", icon: ArrowLeftRight },
-];
+] as const;
 
-// ─── Drawer nav sections ───────────────────────────────────────────────────────
 const DRAWER_SECTIONS = [
   {
     title: "Overview",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: Home },
-    ],
+    items: [{ href: "/dashboard", label: "Dashboard", icon: Home }],
   },
   {
     title: "Finance",
@@ -74,10 +71,10 @@ const DRAWER_SECTIONS = [
       { href: "/dashboard/settings", label: "Settings", icon: Settings },
     ],
   },
-];
+] as const;
 
-// ─── Drawer nav item ───────────────────────────────────────────────────────────
-function DrawerNavItem({
+// ─── Memoized Drawer nav item ──────────────────────────────────────────────────
+const DrawerNavItem = React.memo(function DrawerNavItem({
   href,
   label,
   icon: Icon,
@@ -96,7 +93,7 @@ function DrawerNavItem({
         href={href}
         onClick={onClose}
         className={cn(
-          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
+          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
           "active:scale-[0.98]",
           isActive
             ? "bg-primary/10 text-primary font-medium"
@@ -121,7 +118,80 @@ function DrawerNavItem({
       </Link>
     </SheetClose>
   );
-}
+});
+
+// ─── Memoized Drawer section ───────────────────────────────────────────────────
+const DrawerSection = React.memo(function DrawerSection({
+  title,
+  items,
+  pathname,
+  onClose,
+}: {
+  title: string;
+  items: readonly { href: string; label: string; icon: React.ElementType }[];
+  pathname: string;
+  onClose: () => void;
+}) {
+  return (
+    <div>
+      <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+        {title}
+      </p>
+      <div className="space-y-0.5">
+        {items.map((item) => (
+          <DrawerNavItem
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            isActive={pathname === item.href}
+            onClose={onClose}
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
+
+// ─── Memoized Primary nav item ─────────────────────────────────────────────────
+const PrimaryNavItem = React.memo(function PrimaryNavItem({
+  href,
+  label,
+  icon: Icon,
+  isActive,
+}: {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  isActive: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "flex flex-1 flex-col items-center justify-center rounded-xl p-2.5 gap-0.5 transition-colors",
+        "active:scale-95 relative group",
+        isActive ? "text-primary" : "text-muted-foreground"
+      )}
+    >
+      <Icon
+        strokeWidth={1.5}
+        className={cn(
+          "h-5 w-5 transition-transform duration-200",
+          isActive ? "scale-110" : "group-hover:scale-105"
+        )}
+      />
+      {isActive && (
+        <span
+          className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
+          aria-hidden="true"
+        />
+      )}
+    </Link>
+  );
+});
 
 // ─── Main component ────────────────────────────────────────────────────────────
 export function MobileBottomNav() {
@@ -129,10 +199,19 @@ export function MobileBottomNav() {
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
 
-  // Close drawer when route changes (e.g. back-button navigation)
+  // Stable handlers — prevent re-render of memoized children
+  const handleClose = React.useCallback(() => setOpen(false), []);
+  const handleSignOut = React.useCallback(
+    () => signOut({ callbackUrl: "/login" }),
+    []
+  );
+
+  // Close drawer when route changes (back-button navigation)
   React.useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  const isMoreActive = !PRIMARY_NAV.some((n) => n.href === pathname);
 
   return (
     <>
@@ -143,42 +222,17 @@ export function MobileBottomNav() {
       >
         <div className="h-full max-w-screen-sm mx-auto">
           <div className="flex items-center justify-around px-2 py-2">
-            {/* Primary 4 links */}
-            {PRIMARY_NAV.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-label={item.label}
-                  aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    "flex flex-1 flex-col items-center justify-center rounded-xl p-2.5 gap-0.5 transition-all duration-200",
-                    "active:scale-95",
-                    "relative group",
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  )}
-                >
-                  <Icon
-                    strokeWidth={1.5}
-                    className={cn(
-                      "h-5 w-5 transition-transform duration-200",
-                      isActive ? "scale-110" : "group-hover:scale-105"
-                    )}
-                  />
-                  {/* Active indicator dot */}
-                  {isActive && (
-                    <span
-                      className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
-                      aria-hidden="true"
-                    />
-                  )}
-                </Link>
-              );
-            })}
+            {PRIMARY_NAV.map((item) => (
+              <PrimaryNavItem
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                icon={item.icon}
+                isActive={pathname === item.href}
+              />
+            ))}
 
-            {/* "More" trigger — replaces 5th Settings icon */}
+            {/* "More" trigger */}
             <button
               type="button"
               aria-label="Open navigation menu"
@@ -186,25 +240,19 @@ export function MobileBottomNav() {
               aria-haspopup="dialog"
               onClick={() => setOpen(true)}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center rounded-xl p-2.5 gap-0.5 transition-all duration-200",
+                "flex flex-1 flex-col items-center justify-center rounded-xl p-2.5 gap-0.5 transition-colors",
                 "active:scale-95 relative group",
-                // Show as active if current page is NOT in PRIMARY_NAV
-                !PRIMARY_NAV.some((n) => n.href === pathname)
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                isMoreActive ? "text-primary" : "text-muted-foreground"
               )}
             >
               <LayoutGrid
                 strokeWidth={1.5}
                 className={cn(
                   "h-5 w-5 transition-transform duration-200",
-                  !PRIMARY_NAV.some((n) => n.href === pathname)
-                    ? "scale-110"
-                    : "group-hover:scale-105"
+                  isMoreActive ? "scale-110" : "group-hover:scale-105"
                 )}
               />
-              {/* Active dot when on a non-primary route */}
-              {!PRIMARY_NAV.some((n) => n.href === pathname) && (
+              {isMoreActive && (
                 <span
                   className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
                   aria-hidden="true"
@@ -215,20 +263,19 @@ export function MobileBottomNav() {
         </div>
       </nav>
 
-      {/* ── Navigation Drawer (Sheet sliding from bottom) ── */}
+      {/* ── Navigation Drawer ── */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="bottom"
           aria-describedby={undefined}
           className="p-0 rounded-t-2xl max-h-[85dvh] flex flex-col border-0"
         >
-          {/* Drag handle indicator */}
+          {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1 shrink-0">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/25" aria-hidden="true" />
           </div>
 
           <SheetHeader className="px-5 pt-1 pb-3 shrink-0">
-            {/* User identity */}
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
                 <Logo width={22} height={22} />
@@ -243,7 +290,6 @@ export function MobileBottomNav() {
                   </p>
                 )}
               </div>
-              {/* Theme toggle in drawer header */}
               <ThemeToggle />
             </div>
           </SheetHeader>
@@ -253,23 +299,13 @@ export function MobileBottomNav() {
           {/* Scrollable nav list */}
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-5">
             {DRAWER_SECTIONS.map((section) => (
-              <div key={section.title}>
-                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                  {section.title}
-                </p>
-                <div className="space-y-0.5">
-                  {section.items.map((item) => (
-                    <DrawerNavItem
-                      key={item.href}
-                      href={item.href}
-                      label={item.label}
-                      icon={item.icon}
-                      isActive={pathname === item.href}
-                      onClose={() => setOpen(false)}
-                    />
-                  ))}
-                </div>
-              </div>
+              <DrawerSection
+                key={section.title}
+                title={section.title}
+                items={section.items}
+                pathname={pathname}
+                onClose={handleClose}
+              />
             ))}
           </div>
 
@@ -279,11 +315,11 @@ export function MobileBottomNav() {
           <div className="px-4 py-3 shrink-0 pb-[env(safe-area-inset-bottom,12px)]">
             <button
               type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={handleSignOut}
               className={cn(
                 "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm",
                 "text-destructive/80 hover:bg-destructive/10 hover:text-destructive",
-                "transition-colors duration-200 active:scale-[0.98]"
+                "transition-colors active:scale-[0.98]"
               )}
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
