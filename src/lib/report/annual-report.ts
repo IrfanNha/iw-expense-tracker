@@ -16,6 +16,7 @@
  * - Income is the financial baseline (100% of available resources)
  */
 
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { ensureMonthlySummariesForRange } from "@/lib/summary/ensure-monthly-summary";
 
@@ -108,7 +109,12 @@ function calculateVolatility(expenses: number[]): "LOW" | "MEDIUM" | "HIGH" {
  * - Single database round-trip per entity type
  * - No client-side heavy computation
  */
-export async function getAnnualReport(
+/**
+ * cache() ensures this function is de-duplicated per request:
+ * if called multiple times with the same args in a single server render,
+ * the DB is only queried once — no redundant fetches.
+ */
+export const getAnnualReport = cache(async function getAnnualReport(
   userId: string,
   year: number,
   fromMonth: number = 1,
@@ -252,4 +258,4 @@ export async function getAnnualReport(
       expenseVolatility,
     },
   };
-}
+});
