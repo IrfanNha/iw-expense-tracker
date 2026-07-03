@@ -24,7 +24,7 @@ const ChartContent = dynamic(
     return function ChartContentComponent({ data }: { data: DonutChartProps["data"] }) {
       return (
         <div className="w-full" style={{ height: "clamp(140px, 20vw, 180px)" }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <PieChart>
               <Pie
                 data={data}

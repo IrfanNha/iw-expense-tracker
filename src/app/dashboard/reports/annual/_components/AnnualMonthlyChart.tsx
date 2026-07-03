@@ -41,7 +41,7 @@ const LazyBarChart = dynamic(
       return function BarChartContent({ data }: { data: Props["monthlyTrend"] }) {
         return (
           <div className="h-[300px] md:h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                 <XAxis
