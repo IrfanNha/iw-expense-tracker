@@ -132,12 +132,14 @@ export async function ensureMonthlySummary(
 }
 
 /**
- * Ensure summaries for a range of months
- * 
- * Useful for:
- * - Backfilling historical data
- * - Annual report with custom date range
- * 
+ * Ensure summaries for a range of months — OPTIMIZED BATCH VERSION
+ *
+ * WHY: Original code did N*2 individual DB queries (one findUnique per month
+ * for each table). For a full year (12 months), that's 24 round-trips.
+ *
+ * OPTIMIZED: 2 findMany queries to fetch all existing months at once,
+ * then only rebuild the months that are actually missing.
+ *
  * @param userId - User ID
  * @param year - Year
  * @param fromMonth - Start month (1-12)
@@ -149,14 +151,55 @@ export async function ensureMonthlySummariesForRange(
   fromMonth: number,
   toMonth: number
 ): Promise<void> {
-  const promises: Promise<void>[] = [];
+  // BATCH CHECK: 2 queries instead of N*2 queries
+  const [existingMonthly, existingCategoryMonths] = await Promise.all([
+    // Query 1: which months have MonthlySummary?
+    prisma.monthlySummary.findMany({
+      where: { userId, year, month: { gte: fromMonth, lte: toMonth } },
+      select: { month: true },
+    }),
+    // Query 2: which months have MonthlyCategorySummary?
+    prisma.monthlyCategorySummary.findMany({
+      where: { userId, year, month: { gte: fromMonth, lte: toMonth } },
+      select: { month: true },
+      distinct: ["month"],
+    }),
+  ]);
 
+  const hasMonthly = new Set(existingMonthly.map((r) => r.month));
+  const hasCategory = new Set(existingCategoryMonths.map((r) => r.month));
+
+  // Collect months that need rebuilding
+  const missingMonths: number[] = [];
   for (let month = fromMonth; month <= toMonth; month++) {
-    promises.push(ensureMonthlySummary(userId, year, month));
+    if (!hasMonthly.has(month) || !hasCategory.has(month)) {
+      missingMonths.push(month);
+    }
   }
 
-  await Promise.all(promises);
+  // Fast path: all summaries exist
+  if (missingMonths.length === 0) return;
+
+  // Rebuild only the missing months in parallel
+  await Promise.all(
+    missingMonths.map((month) =>
+      Promise.all([
+        buildMonthlySummary(userId, year, month),
+        buildMonthlyCategorySummary(userId, year, month),
+      ]).catch((error) => {
+        // Race condition: another process already created the summary — safe to ignore
+        if (
+          error instanceof Error &&
+          error.message.includes("Unique constraint")
+        ) {
+          return;
+        }
+        throw error;
+      })
+    )
+  );
 }
+
 
 /**
  * Force Rebuild Monthly Summaries
