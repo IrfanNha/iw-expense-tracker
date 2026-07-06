@@ -1,13 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { ArrowLeftRight, ArrowRight, Plus, Trash2 } from "lucide-react";
+import * as Icons from "lucide-react";
 import { TransferForm } from "@/components/forms/TransferForm";
 import { useTransfers, useDeleteTransfer } from "@/hooks/useTransfer";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/money";
-import { Trash2, ArrowRight, ArrowLeftRight, Plus } from "lucide-react";
-import * as Icons from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -20,196 +20,283 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Transfer = NonNullable<ReturnType<typeof useTransfers>["data"]>[number];
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function TransferSkeleton() {
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-4 animate-pulse">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-muted shrink-0" />
+          <div className="space-y-1.5">
+            <div className="h-3.5 w-20 rounded bg-muted" />
+            <div className="h-2.5 w-32 rounded bg-muted" />
+          </div>
+        </div>
+        <div className="h-6 w-16 rounded bg-muted" />
+      </div>
+      <div className="flex items-center gap-3 pt-3 border-t border-border/60">
+        <div className="h-8 w-8 rounded-full bg-muted shrink-0" />
+        <div className="h-3 flex-1 rounded bg-muted" />
+        <div className="h-4 w-4 rounded bg-muted" />
+        <div className="h-3 flex-1 rounded bg-muted" />
+        <div className="h-8 w-8 rounded-full bg-muted shrink-0" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Single transfer card ─────────────────────────────────────────────────────
+
+const TransferCard = React.memo(function TransferCard({
+  transfer,
+  onDelete,
+}: {
+  transfer: Transfer;
+  onDelete: (id: string) => void;
+}) {
+  const FromIcon = (
+    transfer.fromAccount?.icon && Icons[transfer.fromAccount.icon as keyof typeof Icons]
+      ? Icons[transfer.fromAccount.icon as keyof typeof Icons]
+      : Icons.Wallet
+  ) as unknown as React.ComponentType<{ className?: string }>;
+
+  const ToIcon = (
+    transfer.toAccount?.icon && Icons[transfer.toAccount.icon as keyof typeof Icons]
+      ? Icons[transfer.toAccount.icon as keyof typeof Icons]
+      : Icons.Wallet
+  ) as unknown as React.ComponentType<{ className?: string }>;
+
+  const timeStr = new Date(transfer.createdAt).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <div className="group rounded-xl border border-border/60 bg-card p-4 transition-colors hover:bg-accent/20">
+      {/* Top row: icon + label + amount + delete */}
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <ArrowLeftRight className="h-4 w-4 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-tight">Transfer</p>
+            {transfer.note && (
+              <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[160px]">
+                {transfer.note}
+              </p>
+            )}
+            <p className="text-[10px] text-muted-foreground/70 tabular-nums mt-0.5">
+              {timeStr}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <p className="text-sm font-bold tabular-nums">
+            {formatCurrency(transfer.amount, transfer.fromAccount?.currency || "IDR")}
+          </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(transfer.id)}
+            className="h-7 w-7 ml-1 rounded-lg text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+            title="Delete transfer"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Bottom row: from → to accounts */}
+      <div className="flex items-center gap-2 pt-3 border-t border-border/60">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-500/10">
+            <FromIcon className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+          </div>
+          <p className="text-xs font-medium truncate">
+            {transfer.fromAccount?.name || "Unknown"}
+          </p>
+        </div>
+
+        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+
+        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+          <p className="text-xs font-medium truncate text-right">
+            {transfer.toAccount?.name || "Unknown"}
+          </p>
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+            <ToIcon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ─── Date group divider ───────────────────────────────────────────────────────
+
+function DateDivider({ date }: { date: string }) {
+  return (
+    <div className="flex items-center gap-3 px-1">
+      <div className="h-px flex-1 bg-border/60" />
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 shrink-0">
+        {date}
+      </span>
+      <div className="h-px flex-1 bg-border/60" />
+    </div>
+  );
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
+        <ArrowLeftRight className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <p className="text-sm font-semibold mb-1">No transfers yet</p>
+      <p className="text-xs text-muted-foreground mb-5">
+        Transfer funds between your accounts to get started
+      </p>
+      <TransferForm
+        trigger={
+          <Button size="sm" className="rounded-lg gap-2">
+            <Plus className="h-3.5 w-3.5" />
+            New Transfer
+          </Button>
+        }
+      />
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function TransferPage() {
   const { data: transfers, isLoading } = useTransfers();
   const deleteTransfer = useDeleteTransfer();
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [transferToDelete, setTransferToDelete] = React.useState<string | null>(null);
   const [errorDialogOpen, setErrorDialogOpen] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState<string>("");
+  const [errorMessage, setErrorMessage] = React.useState("");
 
-  const handleDelete = (id: string) => {
+  const handleDelete = React.useCallback((id: string) => {
     setTransferToDelete(id);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const confirmDelete = async () => {
+  const confirmDelete = React.useCallback(async () => {
     if (!transferToDelete) return;
     try {
       await deleteTransfer.mutateAsync(transferToDelete);
       setDeleteDialogOpen(false);
       setTransferToDelete(null);
-    } catch (error: any) {
-      setErrorMessage(error.message || "Failed to delete transfer");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Failed to delete transfer";
+      setErrorMessage(msg);
       setErrorDialogOpen(true);
       setDeleteDialogOpen(false);
       setTransferToDelete(null);
     }
-  };
+  }, [transferToDelete, deleteTransfer]);
 
-  // Group transfers by date
+  // Group by date label
   const groupedTransfers = React.useMemo(() => {
-    if (!transfers) return {};
-    const groups: Record<string, typeof transfers> = {};
-    transfers.forEach((transfer) => {
-      const date = new Date(transfer.createdAt).toLocaleDateString("id-ID", {
+    if (!transfers) return [];
+    const groups: Record<string, Transfer[]> = {};
+    transfers.forEach((t) => {
+      const label = new Date(t.createdAt).toLocaleDateString("id-ID", {
         weekday: "long",
-        year: "numeric",
-        month: "long",
         day: "numeric",
+        month: "long",
+        year: "numeric",
       });
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(transfer);
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(t);
     });
-    return groups;
+    return Object.entries(groups);
   }, [transfers]);
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Transfers</h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-1">
-              Transfer money between your accounts
-            </p>
-          </div>
-          <TransferForm
-            trigger={
-              <Button size="sm" className="gap-2 rounded-sm">
-                <Plus className="h-4 w-4" />
-                New Transfer
-              </Button>
-            }
-          />
+    <div className="space-y-3 md:space-y-4">
+      {/* Page header */}
+      <div className="flex items-center justify-between px-4 pt-4 md:px-6 md:pt-6">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Transfers</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+            Move funds between your accounts
+          </p>
         </div>
+        <TransferForm
+          trigger={
+            <Button size="sm" className="rounded-lg gap-1.5">
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">New Transfer</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          }
+        />
       </div>
 
-      {isLoading ? (
-        <div className="text-center p-4 py-8 md:py-12 text-muted-foreground text-sm">Loading transfers...</div>
-      ) : transfers && transfers.length > 0 ? (
-        <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background space-y-4 md:space-y-6">
-          {Object.entries(groupedTransfers).map(([date, dayTransfers]) => (
-            <div key={date} className="space-y-3">
-              <div className="flex items-center gap-2 px-2">
-                <div className="h-px flex-1 bg-border" />
-                <h3 className="text-xs md:text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  {date}
-                </h3>
-                <div className="h-px flex-1 bg-border" />
+      {/* Content */}
+      <div className="px-4 pb-6 md:px-6 md:pb-8 space-y-4">
+        {isLoading ? (
+          <div className="space-y-3">
+            <TransferSkeleton />
+            <TransferSkeleton />
+            <TransferSkeleton />
+          </div>
+        ) : groupedTransfers.length > 0 ? (
+          <div className="space-y-4">
+            {groupedTransfers.map(([date, dayTransfers]) => (
+              <div key={date} className="space-y-2">
+                <DateDivider date={date} />
+                {dayTransfers.map((transfer) => (
+                  <TransferCard
+                    key={transfer.id}
+                    transfer={transfer}
+                    onDelete={handleDelete}
+                  />
+                ))}
               </div>
-              <div className="space-y-2 md:space-y-3">
-                {dayTransfers.map((transfer) => {
-                  const FromIcon = (transfer.fromAccount?.icon && Icons[transfer.fromAccount.icon as keyof typeof Icons]
-                    ? Icons[transfer.fromAccount.icon as keyof typeof Icons]
-                    : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
-                  const ToIcon = (transfer.toAccount?.icon && Icons[transfer.toAccount.icon as keyof typeof Icons]
-                    ? Icons[transfer.toAccount.icon as keyof typeof Icons]
-                    : Icons.Wallet) as unknown as React.ComponentType<{ className?: string }>;
+            ))}
+          </div>
+        ) : (
+          <EmptyState />
+        )}
+      </div>
 
-                  return (
-                    <Card key={transfer.id} className="shadow-none hover:shadow-md transition-all group rounded-sm">
-                      <CardContent className="p-3 md:p-6">
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="h-10 w-10 md:h-12 md:w-12 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
-                              <ArrowLeftRight className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-sm md:text-base">Transfer</h3>
-                              {transfer.note && (
-                                <p className="text-xs md:text-sm text-muted-foreground mt-0.5 truncate">{transfer.note}</p>
-                              )}
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 md:h-8 md:w-8 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                            onClick={() => handleDelete(transfer.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                          </Button>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 pt-3 md:pt-4 border-t">
-                          <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                              <div className="h-9 w-9 md:h-10 md:w-10 rounded-sm bg-red-500/10 flex items-center justify-center shrink-0">
-                                <FromIcon className="h-4 w-4 md:h-5 md:w-5 text-red-600" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs md:text-sm text-muted-foreground">From</p>
-                                <p className="font-semibold text-sm md:text-base truncate">{transfer.fromAccount?.name || "Unknown"}</p>
-                              </div>
-                            </div>
-                            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground shrink-0" />
-                            <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                              <div className="h-9 w-9 md:h-10 md:w-10 rounded-sm bg-green-500/10 flex items-center justify-center shrink-0">
-                                <ToIcon className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs md:text-sm text-muted-foreground">To</p>
-                                <p className="font-semibold text-sm md:text-base truncate">{transfer.toAccount?.name || "Unknown"}</p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-left sm:text-right shrink-0">
-                            <p className="text-lg md:text-xl font-bold">
-                              {formatCurrency(transfer.amount, transfer.fromAccount?.currency || "IDR")}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {new Date(transfer.createdAt).toLocaleTimeString("id-ID", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Card className="shadow-none">
-          <CardContent className="py-12 md:py-16 text-center">
-            <div className="mx-auto h-12 w-12 md:h-16 md:w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <ArrowLeftRight className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
-            </div>
-            <p className="text-base md:text-lg font-medium mb-2">No transfers yet</p>
-            <p className="text-xs md:text-sm text-muted-foreground mb-6">
-              Transfer money between your accounts to get started
-            </p>
-            <TransferForm
-              trigger={
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Transfer
-                </Button>
-              }
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Transfer</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this transfer? This will revert the account balances. This action cannot be undone.
+              This will revert the account balances. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteTransfer.isPending}
+            >
+              {deleteTransfer.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="h-4 w-4" />
+                  Deleting…
+                </span>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
