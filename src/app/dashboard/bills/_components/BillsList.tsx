@@ -3,8 +3,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BillCard } from "./BillCard";
 import { EmptyBillsState } from "./EmptyBillsState";
-import { Spinner } from "@/components/ui/spinner";
 import { BillStatus } from "@/generated/prisma";
+import { cn } from "@/lib/utils";
 
 interface BillsListProps {
   bills: Array<{
@@ -24,6 +24,35 @@ interface BillsListProps {
   onPayClick: (billId: string) => void;
   onCreateClick: () => void;
 }
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function BillSkeleton() {
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-4 animate-pulse">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg bg-muted shrink-0" />
+          <div className="space-y-2">
+            <div className="h-4 w-24 rounded bg-muted" />
+            <div className="h-3 w-16 rounded bg-muted" />
+          </div>
+        </div>
+        <div className="h-6 w-16 rounded-full bg-muted" />
+      </div>
+      <div className="h-4 w-32 rounded bg-muted mb-4" />
+      <div className="pt-4 border-t border-border/60 space-y-3">
+        <div className="flex justify-between">
+          <div className="h-3 w-20 rounded bg-muted" />
+          <div className="h-5 w-24 rounded bg-muted" />
+        </div>
+        <div className="h-8 w-full rounded bg-muted" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function BillsList({
   bills,
@@ -52,8 +81,10 @@ export function BillsList({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <Spinner className="h-8 w-8" />
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <BillSkeleton key={i} />
+        ))}
       </div>
     );
   }
@@ -65,8 +96,8 @@ export function BillsList({
   const renderBillGrid = (billsList: typeof bills) => {
     if (billsList.length === 0) {
       return (
-        <div className="text-center py-12 text-muted-foreground text-sm">
-          No bills found in this category
+        <div className="text-center py-16 text-muted-foreground text-sm">
+          No bills found in this section
         </div>
       );
     }
@@ -86,32 +117,54 @@ export function BillsList({
   };
 
   return (
-    <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6 h-auto p-1 gap-1">
-          <TabsTrigger value="all" className="text-xs sm:text-sm py-2 px-2 data-[state=active]:bg-background">
-            <span className="block sm:inline">All</span>{" "}
-            <span className="block sm:inline">({allBills.length})</span>
-          </TabsTrigger>
-          <TabsTrigger value="unpaid" className="text-xs sm:text-sm py-2 px-2 data-[state=active]:bg-background">
-            <span className="block sm:inline">Unpaid</span>{" "}
-            <span className="block sm:inline">({unpaidBills.length})</span>
-          </TabsTrigger>
-          <TabsTrigger value="overdue" className="text-xs sm:text-sm py-2 px-2 data-[state=active]:bg-background">
-            <span className="block sm:inline">Overdue</span>{" "}
-            <span className="block sm:inline">({overdueBills.length})</span>
-          </TabsTrigger>
-          <TabsTrigger value="paid" className="text-xs sm:text-sm py-2 px-2 data-[state=active]:bg-background">
-            <span className="block sm:inline">Paid</span>{" "}
-            <span className="block sm:inline">({paidBills.length})</span>
-          </TabsTrigger>
-        </TabsList>
+    <Tabs defaultValue="unpaid" className="w-full">
+      <TabsList className="grid w-full grid-cols-4 h-10 rounded-lg bg-muted/60 mb-4">
+        <TabsTrigger
+          value="all"
+          className="flex items-center justify-center gap-1.5 text-xs sm:text-sm rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+        >
+          <span className="hidden sm:inline">All</span>
+          <span className="sm:hidden">All</span>
+          <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">
+            ({allBills.length})
+          </span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="unpaid"
+          className="flex items-center justify-center gap-1.5 text-xs sm:text-sm rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+        >
+          <span className="hidden sm:inline">Unpaid</span>
+          <span className="sm:hidden">Unpd</span>
+          <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">
+            ({unpaidBills.length})
+          </span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="overdue"
+          className="flex items-center justify-center gap-1.5 text-xs sm:text-sm rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+        >
+          <span className="hidden sm:inline">Overdue</span>
+          <span className="sm:hidden">Ovd</span>
+          <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">
+            ({overdueBills.length})
+          </span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="paid"
+          className="flex items-center justify-center gap-1.5 text-xs sm:text-sm rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+        >
+          <span className="hidden sm:inline">Paid</span>
+          <span className="sm:hidden">Paid</span>
+          <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">
+            ({paidBills.length})
+          </span>
+        </TabsTrigger>
+      </TabsList>
 
-        <TabsContent value="all">{renderBillGrid(allBills)}</TabsContent>
-        <TabsContent value="unpaid">{renderBillGrid(unpaidBills)}</TabsContent>
-        <TabsContent value="overdue">{renderBillGrid(overdueBills)}</TabsContent>
-        <TabsContent value="paid">{renderBillGrid(paidBills)}</TabsContent>
-      </Tabs>
-    </div>
+      <TabsContent value="all" className="mt-0">{renderBillGrid(allBills)}</TabsContent>
+      <TabsContent value="unpaid" className="mt-0">{renderBillGrid(unpaidBills)}</TabsContent>
+      <TabsContent value="overdue" className="mt-0">{renderBillGrid(overdueBills)}</TabsContent>
+      <TabsContent value="paid" className="mt-0">{renderBillGrid(paidBills)}</TabsContent>
+    </Tabs>
   );
 }

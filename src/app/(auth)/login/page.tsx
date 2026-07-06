@@ -9,7 +9,6 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
 import { loginSchema } from "@/lib/validators";
 import { Turnstile, TurnstileRef } from "@/components/features/Turnstile";
@@ -201,24 +200,24 @@ function LoginForm() {
       </div>
 
 
-        <Card className="border-2 shadow-lg">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl">Login</CardTitle>
-            <CardDescription>
+        <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-6 sm:p-8">
+          <div className="space-y-1.5 mb-8">
+            <h2 className="text-2xl font-bold tracking-tight">Login</h2>
+            <p className="text-sm text-muted-foreground">
               Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-destructive flex-1">{error}</p>
-                </div>
-              )}
+            </p>
+          </div>
+          
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {error && (
+              <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-destructive flex-1">{error}</p>
+              </div>
+            )}
 
-              {success && (
-                <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3 flex items-start gap-2">
+            {success && (
+              <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-3 flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                   <p className="text-sm text-green-600 dark:text-green-400 flex-1">{success}</p>
                 </div>
@@ -236,7 +235,7 @@ function LoginForm() {
                   {...form.register("email")}
                   autoComplete="email"
                   className={cn(
-                    "h-11 transition-all",
+                    "h-11 rounded-xl transition-all",
                     form.formState.errors.email && "border-destructive focus-visible:ring-destructive"
                   )}
                   disabled={isLoading}
@@ -261,7 +260,7 @@ function LoginForm() {
                   autoComplete="current-password"
                   maxLength={10}
                   className={cn(
-                    "h-11 transition-all",
+                    "h-11 rounded-xl transition-all",
                     form.formState.errors.pin && "border-destructive focus-visible:ring-destructive"
                   )}
                   disabled={isLoading}
@@ -287,7 +286,7 @@ function LoginForm() {
 
               <Button 
                 type="submit" 
-                className="w-full h-11 text-base font-semibold" 
+                className="w-full h-11 rounded-xl text-base font-semibold" 
                 disabled={isLoading || (!isDevelopment && !turnstileToken)}
               >
                 {isLoading ? (
@@ -310,8 +309,7 @@ function LoginForm() {
                 </Link>
               </div>
             </form>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );

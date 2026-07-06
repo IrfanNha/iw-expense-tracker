@@ -106,89 +106,77 @@ export default function BudgetsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Budgets</h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-1">
-              Track your spending against your monthly budget goals
-            </p>
-          </div>
+      {/* Header & Navigation */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between px-4 pt-4 md:px-6 md:pt-6 gap-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Budgets</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+            Track your spending against your monthly goals
+          </p>
         </div>
-      </div>
-
-      {/* Month Navigation */}
-      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
-        <div className="flex items-center justify-center rounded-md border px-2 py-2 md:px-3 md:py-2.5 bg-muted/30">
-          <div className="flex items-center gap-3 md:gap-2.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePreviousMonth}
-              className="h-8 w-8 md:h-9 md:w-9 rounded-md bg-background hover:bg-muted"
-            >
-              <ChevronLeft className="h-4 w-4 md:h-4 md:w-4" />
-            </Button>
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "flex flex-col items-center justify-center h-auto py-1.5 px-3 md:px-4 hover:bg-muted rounded-md min-w-[120px] md:min-w-[140px]"
-                  )}
-                >
-                  <span className="text-xs md:text-sm text-muted-foreground">
-                    This month
-                  </span>
-                  <span className="text-sm md:text-base font-semibold">
-                    {formatMonthYear()}
-                  </span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => {
-                    if (date) {
-                      setSelectedDate(date);
-                      setCalendarOpen(false);
-                    }
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleNextMonth}
-              className="h-8 w-8 md:h-9 md:w-9 rounded-md bg-background hover:bg-muted"
-            >
-              <ChevronRight className="h-4 w-4 md:h-4 md:w-4" />
-            </Button>
-          </div>
+        
+        {/* Month Navigation */}
+        <div className="flex items-center rounded-lg border border-border/60 bg-card p-1 shadow-sm shrink-0 w-fit">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handlePreviousMonth}
+            className="h-8 w-8 rounded-md hover:bg-accent/50"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className="h-8 px-3 text-sm font-semibold hover:bg-accent/50 rounded-md min-w-[120px]"
+              >
+                {formatMonthYear()}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setCalendarOpen(false);
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleNextMonth}
+            className="h-8 w-8 rounded-md hover:bg-accent/50"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="p-4 sm:p-0">
-         <BudgetSummaryCards
-            totalBudget={totalBudget}
-            totalActual={totalActual}
-            totalRemaining={totalRemaining}
-            overallUsageRate={overallUsageRate}
-          />
-      </div>
-      {/* Budget List */}
-      <BudgetList
-        budgets={budgetVsActual || []}
-        isLoading={isLoading}
-        onEdit={handleEditBudget}
-        onDelete={handleDeleteBudget}
-        onCreateBudget={handleCreateBudget}
+      <BudgetSummaryCards
+        totalBudget={totalBudget}
+        totalActual={totalActual}
+        totalRemaining={totalRemaining}
+        overallUsageRate={overallUsageRate}
       />
+
+      {/* Budget List */}
+      <div className="px-4 pb-6 md:px-6 md:pb-8">
+        <BudgetList
+          budgets={budgetVsActual || []}
+          isLoading={isLoading}
+          onEdit={handleEditBudget}
+          onDelete={handleDeleteBudget}
+          onCreateBudget={handleCreateBudget}
+        />
+      </div>
 
       {/* Edit/Create Dialog */}
       <EditBudgetDialog
