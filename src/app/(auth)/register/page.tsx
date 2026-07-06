@@ -8,7 +8,6 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
 import { registerSchema } from "@/lib/validators";
 import { Turnstile, TurnstileRef } from "@/components/features/Turnstile";
@@ -182,21 +181,21 @@ export default function RegisterPage() {
         </div>
 
 
-        <Card className="border-2 shadow-lg">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl">Register</CardTitle>
-            <CardDescription>
+        <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-6 sm:p-8">
+          <div className="space-y-1.5 mb-8">
+            <h2 className="text-2xl font-bold tracking-tight">Register</h2>
+            <p className="text-sm text-muted-foreground">
               Fill in your information to create an account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {error && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-destructive flex-1">{error}</p>
-                </div>
-              )}
+            </p>
+          </div>
+          
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {error && (
+              <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-destructive flex-1">{error}</p>
+              </div>
+            )}
 
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2">
@@ -210,7 +209,7 @@ export default function RegisterPage() {
                   {...form.register("name")}
                   autoComplete="name"
                   className={cn(
-                    "h-11 transition-all",
+                    "h-11 rounded-xl transition-all",
                     form.formState.errors.name && "border-destructive focus-visible:ring-destructive"
                   )}
                   disabled={isLoading}
@@ -235,7 +234,7 @@ export default function RegisterPage() {
                   {...form.register("email")}
                   autoComplete="email"
                   className={cn(
-                    "h-11 transition-all",
+                    "h-11 rounded-xl transition-all",
                     form.formState.errors.email && "border-destructive focus-visible:ring-destructive"
                   )}
                   disabled={isLoading}
@@ -260,7 +259,7 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   maxLength={10}
                   className={cn(
-                    "h-11 transition-all",
+                    "h-11 rounded-xl transition-all",
                     form.formState.errors.pin && "border-destructive focus-visible:ring-destructive"
                   )}
                   disabled={isLoading}
@@ -290,7 +289,7 @@ export default function RegisterPage() {
 
               <Button 
                 type="submit" 
-                className="w-full h-11 text-base font-semibold" 
+                className="w-full h-11 rounded-xl text-base font-semibold" 
                 disabled={isLoading || (!isDevelopment && !turnstileToken)}
               >
                 {isLoading ? (
@@ -313,8 +312,7 @@ export default function RegisterPage() {
                 </Link>
               </div>
             </form>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );

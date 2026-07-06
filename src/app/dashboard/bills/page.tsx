@@ -35,34 +35,35 @@ export default function BillsPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Header Section */}
-      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Bills</h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-1">
-              Track and manage your bills and installments
-            </p>
-          </div>
-          <Button size="sm" className="gap-2 rounded-sm" onClick={handleCreateClick}>
-            <Plus className="h-4 w-4" />
-            Add Bill
-          </Button>
+    <div className="space-y-3 md:space-y-4">
+      {/* Page header */}
+      <div className="flex items-center justify-between px-4 pt-4 md:px-6 md:pt-6">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Bills</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+            Track and manage your bills and installments
+          </p>
         </div>
-
-        {/* Summary Cards */}
-        <BillSummaryCards bills={bills} />
+        <Button size="sm" className="rounded-lg gap-1.5" onClick={handleCreateClick}>
+          <Plus className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Add Bill</span>
+          <span className="sm:hidden">Add</span>
+        </Button>
       </div>
 
+      {/* Summary Cards */}
+      <BillSummaryCards bills={bills} />
+
       {/* Bills List */}
-      <BillsList
-        bills={bills}
-        isLoading={isLoading}
-        onBillClick={handleBillClick}
-        onPayClick={handlePayClick}
-        onCreateClick={handleCreateClick}
-      />
+      <div className="px-4 pb-6 md:px-6 md:pb-8">
+        <BillsList
+          bills={bills}
+          isLoading={isLoading}
+          onBillClick={handleBillClick}
+          onPayClick={handlePayClick}
+          onCreateClick={handleCreateClick}
+        />
+      </div>
 
       {/* Modals */}
       <CreateBillDialog

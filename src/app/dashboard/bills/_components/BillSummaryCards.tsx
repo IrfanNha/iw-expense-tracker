@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/money";
 import { AlertCircle, Clock, Receipt } from "lucide-react";
 import { BillStatus } from "@/generated/prisma";
@@ -37,70 +36,72 @@ export function BillSummaryCards({ bills }: BillSummaryCardsProps) {
     return dueDate >= now && dueDate <= thirtyDaysFromNow;
   });
 
-  const summaryData = [
-    {
-      label: "Total Unpaid",
-      value: formatCurrency(totalUnpaid),
-      icon: Receipt,
-      gradient: "from-blue-500/10 to-blue-500/5",
-      iconBg: "bg-blue-500/20",
-      iconColor: "text-blue-600 dark:text-blue-400",
-      borderColor: "border-blue-500/20",
-    },
-    {
-      label: "Overdue",
-      value: overdueBills.length,
-      subtitle: overdueBills.length === 1 ? "bill" : "bills",
-      icon: AlertCircle,
-      gradient: "from-red-500/10 to-red-500/5",
-      iconBg: "bg-red-500/20",
-      iconColor: "text-red-600 dark:text-red-400",
-      borderColor: "border-red-500/20",
-    },
-    {
-      label: "Upcoming",
-      value: upcomingBills.length,
-      subtitle: "next 30 days",
-      icon: Clock,
-      gradient: "from-amber-500/10 to-amber-500/5",
-      iconBg: "bg-amber-500/20",
-      iconColor: "text-amber-600 dark:text-amber-400",
-      borderColor: "border-amber-500/20",
-    },
-  ];
-
   return (
-    <div className="flex flex-col md:grid md:grid-cols-3 gap-2 md:gap-4">
-      {summaryData.map((item, index) => {
-        const Icon = item.icon;
-        return (
-          <Card
-            key={index}
-            className={`rounded-sm bg-gradient-to-br ${item.gradient} ${item.borderColor} transition-all shadow-none hover:shadow-md border`}
-          >
-            <CardContent className="p-2.5 md:p-6">
-              <div className="flex items-start justify-between mb-1.5 md:mb-3">
-                <p className="text-xs md:text-sm font-medium text-muted-foreground">
-                  {item.label}
-                </p>
-                <div className={`h-7 w-7 md:h-10 md:w-10 rounded-sm ${item.iconBg} flex items-center justify-center shrink-0`}>
-                  <Icon className={`h-3.5 w-3.5 md:h-5 md:w-5 ${item.iconColor}`} />
-                </div>
+    <div className="mx-4 md:mx-6 rounded-xl border border-border/60 bg-card mt-2">
+      <div className="grid grid-cols-3 divide-x divide-border/60 px-2 py-3 md:px-4 md:py-4">
+        {/* Total Unpaid */}
+        <div className="px-2 md:px-3">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <div className="flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full bg-blue-500/10 shrink-0">
+                <Receipt className="h-3 w-3 md:h-3.5 md:w-3.5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold">
-                  {item.value}
-                </p>
-                {item.subtitle && (
-                  <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                    {item.subtitle}
-                  </p>
-                )}
+              <p className="text-[10px] md:text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 truncate">
+                Total Unpaid
+              </p>
+            </div>
+            <div>
+              <p className="text-sm md:text-xl font-bold tabular-nums text-foreground">
+                {formatCurrency(totalUnpaid)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Overdue */}
+        <div className="px-2 md:px-3">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <div className="flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full bg-red-500/10 shrink-0">
+                <AlertCircle className="h-3 w-3 md:h-3.5 md:w-3.5 text-red-600 dark:text-red-400" />
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+              <p className="text-[10px] md:text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 truncate">
+                Overdue
+              </p>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <p className="text-sm md:text-xl font-bold tabular-nums text-foreground">
+                {overdueBills.length}
+              </p>
+              <p className="text-[10px] md:text-xs text-muted-foreground hidden sm:inline-block">
+                {overdueBills.length === 1 ? "bill" : "bills"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming */}
+        <div className="px-2 md:px-3">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <div className="flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full bg-amber-500/10 shrink-0">
+                <Clock className="h-3 w-3 md:h-3.5 md:w-3.5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <p className="text-[10px] md:text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 truncate">
+                Upcoming
+              </p>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <p className="text-sm md:text-xl font-bold tabular-nums text-foreground">
+                {upcomingBills.length}
+              </p>
+              <p className="text-[10px] md:text-xs text-muted-foreground hidden sm:inline-block">
+                next 30d
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

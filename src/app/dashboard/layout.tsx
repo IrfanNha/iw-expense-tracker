@@ -92,13 +92,13 @@ const SidebarNavItem = React.memo(function SidebarNavItem({
         "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-colors relative",
         isActive
           ? "bg-foreground text-background font-medium"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          : "text-foreground/70 hover:bg-muted hover:text-foreground"
       )}
     >
       <Icon
         className={cn(
           "h-4 w-4 shrink-0 transition-transform duration-150",
-          isActive ? "opacity-90" : "opacity-60 group-hover:opacity-80"
+          isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"
         )}
         strokeWidth={isActive ? 2 : 1.75}
       />
@@ -157,7 +157,7 @@ const DesktopSidebar = React.memo(function DesktopSidebar({
       >
         {SIDEBAR_SECTIONS.map((section) => (
           <div key={section.title}>
-            <p className="px-2.5 mb-1 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/40 select-none">
+            <p className="px-2.5 mb-1 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-foreground/50 select-none">
               {section.title}
             </p>
             <div className="space-y-px">

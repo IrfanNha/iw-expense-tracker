@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
+## [1.2.4] — 2026-07-06
+
+### ✨ Changed — Massive UI/UX Overhaul & Code Refactoring
+
+Complete architectural and visual redesign across all major pages to align with a unified, premium, and mature fintech aesthetic. Major improvements to code maintainability by breaking down monolithic files into specialized components.
+
+- **Dashboard:** Refactored into smaller components. Redesigned empty states, transaction lists, and added skeleton loaders.
+- **Accounts & Categories:** Replaced heavy shadow cards with clean `rounded-xl` grids. Implemented robust empty states and skeleton loaders.
+- **Transactions & Transfer:** Streamlined form layouts, enhanced date navigators, and updated dialogs for a polished experience.
+- **Budgets & Reports:** Overhauled visual layouts with horizontal pill-tabs, integrated color-mapped progress bars, and premium "Advisor" style insight grids.
+- **Settings:** Refactored a 900+ line monolith into modular components (Profile, Security, Data). Redesigned the "Danger Zone" with refined destructive styling.
+- **Authentication:** Upgraded `/login` and `/register` pages with custom glassmorphism containers (`backdrop-blur`), replacing default shadow cards.
+- **Navigation Contrast:** Increased text contrast for desktop sidebar section headers and inactive links to improve legibility.
+
 ## [1.2.3] — 2026-07-03
 
 ### ✨ Changed — Desktop Sidebar Overhaul

@@ -94,7 +94,7 @@ export const BalanceHeader = React.memo(function BalanceHeader({
   accountsLoading,
 }: BalanceHeaderProps) {
   return (
-    <div className="bg-background">
+    <div className="bg-background border-b border-border/60 pb-5 md:pb-6">
       {/* Balance row */}
       <div className="flex items-start justify-between gap-4 px-4 pt-4 pb-4 md:px-6 md:pt-6 md:pb-5">
         <div className="space-y-0.5">
@@ -125,7 +125,7 @@ export const BalanceHeader = React.memo(function BalanceHeader({
       </div>
 
       {/* Summary strip */}
-      <div className=" mx-4 mb-5 md:mx-6 md:mb-6 rounded-xl border border-border/60 bg-card">
+      <div className="mx-4 md:mx-6 rounded-xl border border-border/60 bg-card">
         <div className="grid grid-cols-3 divide-x divide-border/60 px-2 py-3  md:px-4 md:py-4">
           <div className="px-2 md:px-3">
             <SummaryMetric

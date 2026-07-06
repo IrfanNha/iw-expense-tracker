@@ -106,21 +106,36 @@ export function AnnualReportControls({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Annual Financial Report
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Ringkasan kesehatan keuangan tahunan
-        </p>
+    <div className="flex flex-col gap-4 md:gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">
+            Annual Financial Report
+          </h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+            Ringkasan kesehatan keuangan tahunan
+          </p>
+        </div>
+
+        {/* Action Button */}
+        <Button
+          id="annual-report-resync-btn"
+          onClick={handleResync}
+          disabled={isResyncing}
+          variant="outline"
+          size="sm"
+          className="w-full md:w-auto rounded-lg gap-1.5 shrink-0"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isResyncing ? "animate-spin" : ""}`} />
+          {isResyncing ? "Resyncing..." : "Resync Data"}
+        </Button>
       </div>
 
       {/* Resync notification */}
       {resyncMessage && (
         <Alert
           variant={resyncMessage.type === "error" ? "destructive" : "default"}
-          className="mb-0"
+          className="mb-0 rounded-lg"
         >
           {resyncMessage.type === "success" ? (
             <Info className="h-4 w-4" />
@@ -134,15 +149,15 @@ export function AnnualReportControls({
       )}
 
       {/* Year and Month Range Selectors */}
-      <div className="flex flex-wrap gap-3 md:gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 md:gap-4 items-end">
         {/* Year Selector */}
-        <div className="space-y-1.5 flex-1 min-w-[140px]">
-          <label className="text-xs md:text-sm font-medium">Year</label>
+        <div className="space-y-1.5 w-full sm:w-[140px] shrink-0">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Year</label>
           <Select
             value={selectedYear.toString()}
             onValueChange={handleYearChange}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full rounded-lg border-border/60">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -156,59 +171,40 @@ export function AnnualReportControls({
         </div>
 
         {/* Month Range Quick Selects */}
-        <div className="space-y-1.5 flex-1 min-w-[200px]">
-          <label className="text-xs md:text-sm font-medium">Period</label>
-          <div className="flex gap-2">
+        <div className="space-y-1.5 w-full sm:flex-1 max-w-[300px]">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Period</label>
+          <div className="flex gap-2 bg-muted/60 p-1 rounded-lg">
             <Button
-              variant={fromMonth === 1 && toMonth === 12 ? "default" : "outline"}
+              variant={fromMonth === 1 && toMonth === 12 ? "default" : "ghost"}
               size="sm"
-              className="flex-1 text-xs"
+              className={`flex-1 text-xs h-8 rounded-md ${fromMonth === 1 && toMonth === 12 ? "shadow-sm" : ""}`}
               onClick={() => handleMonthRangeChange(1, 12)}
             >
               Full Year
             </Button>
             <Button
-              variant={fromMonth === 1 && toMonth === 6 ? "default" : "outline"}
+              variant={fromMonth === 1 && toMonth === 6 ? "default" : "ghost"}
               size="sm"
-              className="flex-1 text-xs"
+              className={`flex-1 text-xs h-8 rounded-md ${fromMonth === 1 && toMonth === 6 ? "shadow-sm" : ""}`}
               onClick={() => handleMonthRangeChange(1, 6)}
             >
               H1
             </Button>
             <Button
-              variant={fromMonth === 7 && toMonth === 12 ? "default" : "outline"}
+              variant={fromMonth === 7 && toMonth === 12 ? "default" : "ghost"}
               size="sm"
-              className="flex-1 text-xs"
+              className={`flex-1 text-xs h-8 rounded-md ${fromMonth === 7 && toMonth === 12 ? "shadow-sm" : ""}`}
               onClick={() => handleMonthRangeChange(7, 12)}
             >
               H2
             </Button>
           </div>
         </div>
-
-        {/* Resync Button */}
-        <div className="space-y-1.5 shrink-0">
-          <label className="text-xs md:text-sm font-medium opacity-0 pointer-events-none">
-            Actions
-          </label>
-          <Button
-            id="annual-report-resync-btn"
-            onClick={handleResync}
-            disabled={isResyncing}
-            variant="outline"
-            size="default"
-            className="w-full md:w-auto gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isResyncing ? "animate-spin" : ""}`} />
-            {isResyncing ? "Resyncing..." : "Resync Data"}
-          </Button>
+        
+        <div className="text-xs font-medium text-muted-foreground pb-2 ml-auto">
+          {MONTH_NAMES_SHORT[fromMonth - 1]} - {MONTH_NAMES_SHORT[toMonth - 1]} {selectedYear}
         </div>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        Showing: {MONTH_NAMES_SHORT[fromMonth - 1]} -{" "}
-        {MONTH_NAMES_SHORT[toMonth - 1]} {selectedYear}
-      </p>
     </div>
   );
 }
