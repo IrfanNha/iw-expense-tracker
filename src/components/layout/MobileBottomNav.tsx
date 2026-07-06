@@ -33,8 +33,8 @@ import { Separator } from "@/components/ui/separator";
 // ─── Constants (defined once, outside component) ──────────────────────────────
 const PRIMARY_NAV = [
   { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
   { href: "/dashboard/bills", label: "Bills", icon: Receipt },
+  { href: "/dashboard/budgets", label: "Budgets", icon: PieChart },
   { href: "/dashboard/transfer", label: "Transfer", icon: ArrowLeftRight },
 ] as const;
 
@@ -171,24 +171,33 @@ const PrimaryNavItem = React.memo(function PrimaryNavItem({
       aria-label={label}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex flex-1 flex-col items-center justify-center rounded-xl p-2.5 gap-0.5 transition-colors",
-        "active:scale-95 relative group",
+        "flex flex-1 flex-col items-center justify-center pt-2 pb-1 gap-1 outline-none select-none relative",
         isActive ? "text-primary" : "text-muted-foreground"
       )}
+      style={{ WebkitTapHighlightColor: "transparent" }}
     >
       <Icon
-        strokeWidth={1.5}
+        strokeWidth={isActive ? 2.5 : 1.75}
         className={cn(
-          "h-5 w-5 transition-transform duration-200",
-          isActive ? "scale-110" : "group-hover:scale-105"
+          "h-[22px] w-[22px] transition-all duration-300 ease-out",
+          isActive ? "scale-100" : "scale-95 opacity-80"
         )}
       />
-      {isActive && (
-        <span
-          className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
-          aria-hidden="true"
-        />
-      )}
+      <span
+        className={cn(
+          "text-[10px] transition-all duration-300 ease-out",
+          isActive ? "font-semibold opacity-100" : "font-medium opacity-70"
+        )}
+      >
+        {label}
+      </span>
+      {/* Smooth glowing dot for active state */}
+      <span
+        className={cn(
+          "absolute top-0 h-0.5 w-8 rounded-full bg-primary transition-all duration-300 ease-out",
+          isActive ? "opacity-100 scale-100" : "opacity-0 scale-50"
+        )}
+      />
     </Link>
   );
 });
@@ -198,6 +207,7 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
+  const [shouldRender, setShouldRender] = React.useState(false);
 
   // Stable handlers — prevent re-render of memoized children
   const handleClose = React.useCallback(() => setOpen(false), []);
@@ -211,17 +221,28 @@ export function MobileBottomNav() {
     setOpen(false);
   }, [pathname]);
 
+  // Defer rendering of navigation list to prevent animation stutter on mobile
+  React.useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => setShouldRender(true), 50);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   const isMoreActive = !PRIMARY_NAV.some((n) => n.href === pathname);
 
   return (
     <>
       {/* ── Bottom Nav Bar ── */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden shadow-lg"
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background md:hidden shadow-[0_-4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.2)] pb-[env(safe-area-inset-bottom)]"
         aria-label="Bottom navigation"
       >
         <div className="h-full max-w-screen-sm mx-auto">
-          <div className="flex items-center justify-around px-2 py-2">
+          <div className="flex items-center justify-around px-2 pt-1 pb-1">
             {PRIMARY_NAV.map((item) => (
               <PrimaryNavItem
                 key={item.href}
@@ -232,7 +253,6 @@ export function MobileBottomNav() {
               />
             ))}
 
-            {/* "More" trigger */}
             <button
               type="button"
               aria-label="Open navigation menu"
@@ -240,24 +260,32 @@ export function MobileBottomNav() {
               aria-haspopup="dialog"
               onClick={() => setOpen(true)}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center rounded-xl p-2.5 gap-0.5 transition-colors",
-                "active:scale-95 relative group",
+                "flex flex-1 flex-col items-center justify-center pt-2 pb-1 gap-1 outline-none select-none relative",
                 isMoreActive ? "text-primary" : "text-muted-foreground"
               )}
+              style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <LayoutGrid
-                strokeWidth={1.5}
+                strokeWidth={isMoreActive ? 2.5 : 1.75}
                 className={cn(
-                  "h-5 w-5 transition-transform duration-200",
-                  isMoreActive ? "scale-110" : "group-hover:scale-105"
+                  "h-[22px] w-[22px] transition-all duration-300 ease-out",
+                  isMoreActive ? "scale-100" : "scale-95 opacity-80"
                 )}
               />
-              {isMoreActive && (
-                <span
-                  className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
-                  aria-hidden="true"
-                />
-              )}
+              <span
+                className={cn(
+                  "text-[10px] transition-all duration-300 ease-out",
+                  isMoreActive ? "font-semibold opacity-100" : "font-medium opacity-70"
+                )}
+              >
+                More
+              </span>
+              <span
+                className={cn(
+                  "absolute top-0 h-0.5 w-8 rounded-full bg-primary transition-all duration-300 ease-out",
+                  isMoreActive ? "opacity-100 scale-100" : "opacity-0 scale-50"
+                )}
+              />
             </button>
           </div>
         </div>
@@ -297,16 +325,22 @@ export function MobileBottomNav() {
           <Separator className="shrink-0" />
 
           {/* Scrollable nav list */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-5">
-            {DRAWER_SECTIONS.map((section) => (
-              <DrawerSection
-                key={section.title}
-                title={section.title}
-                items={section.items}
-                pathname={pathname}
-                onClose={handleClose}
-              />
-            ))}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-5 min-h-[300px]">
+            {shouldRender ? (
+              DRAWER_SECTIONS.map((section) => (
+                <DrawerSection
+                  key={section.title}
+                  title={section.title}
+                  items={section.items}
+                  pathname={pathname}
+                  onClose={handleClose}
+                />
+              ))
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent opacity-50" />
+              </div>
+            )}
           </div>
 
           <Separator className="shrink-0" />

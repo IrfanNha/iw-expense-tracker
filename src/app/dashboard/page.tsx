@@ -145,7 +145,7 @@ export default function DashboardPage() {
         <TransactionForm
           trigger={
             <Button
-              className="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg shadow-primary/20"
+              className="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-md"
               size="icon"
             >
               <Plus className="h-5 w-5 md:h-6 md:w-6" />

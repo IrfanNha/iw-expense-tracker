@@ -383,6 +383,7 @@ export function TransactionForm({
   const isMobile = useIsMobile();
   const [internalOpen, setInternalOpen] = React.useState(false);
   const isEditMode = !!transaction;
+  const [shouldRender, setShouldRender] = React.useState(false);
 
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
@@ -453,6 +454,19 @@ export function TransactionForm({
       setOpen(true);
     }
   }, [transaction, open, controlledOpen, setOpen]);
+
+  // Defer rendering of heavy form content to prevent animation stutter on mobile
+  React.useEffect(() => {
+    if (open) {
+      // 50ms is enough to let the browser start the CSS animation smoothly
+      const timer = setTimeout(() => setShouldRender(true), 50);
+      return () => clearTimeout(timer);
+    } else {
+      // Add a slight delay before unmounting to allow the close animation to finish
+      const timer = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   const handleCancel = React.useCallback(() => {
     setOpen(false);
@@ -548,8 +562,14 @@ export function TransactionForm({
             <SheetDescription className="text-xs text-left">{description}</SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-8">
-            {formContent}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-8 min-h-[400px]">
+            {shouldRender ? (
+              formContent
+            ) : (
+              <div className="flex h-full w-full items-center justify-center min-h-[300px]">
+                <Spinner className="h-6 w-6 text-muted-foreground opacity-50" />
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
@@ -565,8 +585,14 @@ export function TransactionForm({
           <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
           <DialogDescription className="text-xs">{description}</DialogDescription>
         </DialogHeader>
-        <div className="px-6 py-5 overflow-y-auto max-h-[80vh]">
-          {formContent}
+        <div className="px-6 py-5 overflow-y-auto max-h-[80vh] min-h-[400px]">
+          {shouldRender ? (
+            formContent
+          ) : (
+            <div className="flex h-full w-full items-center justify-center min-h-[300px]">
+              <Spinner className="h-6 w-6 text-muted-foreground opacity-50" />
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
