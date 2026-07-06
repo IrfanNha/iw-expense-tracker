@@ -1,55 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { useAccounts } from "@/hooks/useAccounts";
-import { useTransactions } from "@/hooks/useTransactions";
-import { formatCurrency } from "@/lib/money";
-import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  ArrowLeftRight,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Trash2,
-  Receipt,
-  Pencil,
-  ArrowUpDown,
-  ArrowDownAZ,
-  ArrowDownUp,
-  Search,
-  X,
-} from "lucide-react";
-import Fuse from "fuse.js";
-import * as Icons from "lucide-react";
-import { TransactionForm } from "@/components/forms/TransactionForm";
-import { TransferForm } from "@/components/forms/TransferForm";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useDeleteTransaction, type Transaction } from "@/hooks/useTransactions";
-import { cn } from "@/lib/utils";
 import * as React from "react";
-import Link from "next/link";
-import { DonutChart } from "@/components/charts/DonutChart";
-import { IncomeExpenseChart } from "@/components/charts/IncomeExpenseChart";
-import { PercentageMode, getDefaultModeForPeriod } from "@/types/finance";
-import { PercentageModeToggle } from "@/components/ui/PercentageModeToggle";
-import { Calendar } from "@/components/ui/calendar";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,1099 +13,160 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-async function fetchMonthlyReport() {
-  const res = await fetch("/api/reports/monthly");
-  if (!res.ok) throw new Error("Failed to fetch report");
-  return res.json();
-}
-
-type Period = "day" | "week" | "month";
-
-/**
- * Returns a human-readable relative label for the selected date/period.
- * Returns an empty string when the date is not within ±1 unit of today.
- */
-function getPeriodLabel(date: Date, period: Period): string {
-  const now = new Date();
-
-  if (period === "day") {
-    // Compare calendar dates only (ignore time)
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const selected = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const diffDays = Math.round(
-      (selected.getTime() - today.getTime()) / 86_400_000
-    );
-    if (diffDays === 0) return "Today";
-    if (diffDays === -1) return "Yesterday";
-    if (diffDays === 1) return "Tomorrow";
-    return "";
-  }
-
-  if (period === "week") {
-    // Get Monday of a given date
-    const getMonday = (d: Date): Date => {
-      const day = d.getDay();
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-      return new Date(d.getFullYear(), d.getMonth(), diff);
-    };
-    const thisWeekMs = getMonday(now).getTime();
-    const selectedWeekMs = getMonday(date).getTime();
-    const diffWeeks = Math.round(
-      (selectedWeekMs - thisWeekMs) / (7 * 86_400_000)
-    );
-    if (diffWeeks === 0) return "This week";
-    if (diffWeeks === -1) return "Last week";
-    if (diffWeeks === 1) return "Next week";
-    return "";
-  }
-
-  // month
-  const diffMonths =
-    (date.getFullYear() - now.getFullYear()) * 12 +
-    (date.getMonth() - now.getMonth());
-  if (diffMonths === 0) return "This month";
-  if (diffMonths === -1) return "Last month";
-  if (diffMonths === 1) return "Next month";
-  return "";
-}
+import { Spinner } from "@/components/ui/spinner";
+import { TransactionForm } from "@/components/forms/TransactionForm";
+import { useAccounts } from "@/hooks/useAccounts";
+import { useTransactions, useDeleteTransaction, type Transaction } from "@/hooks/useTransactions";
+import { useMonthlyReport } from "@/hooks/useMonthlyReport";
+import { useDashboardFilters } from "@/hooks/useDashboardFilters";
+import { usePeriodTransactions } from "@/hooks/usePeriodTransactions";
+import {
+  BalanceHeader,
+  AccountsList,
+  TransactionChart,
+  TransactionList,
+} from "@/components/dashboard";
 
 export default function DashboardPage() {
+  // ─── Data ────────────────────────────────────────────────────────────────────
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
-  const { data: report, isLoading: reportLoading } = useQuery({
-    queryKey: ["reports", "monthly"],
-    queryFn: fetchMonthlyReport,
+  const { data: transactions, isLoading: transactionsLoading } = useTransactions({ limit: 1000 });
+  const { data: report, isLoading: reportLoading } = useMonthlyReport();
+  const deleteTransaction = useDeleteTransaction();
+
+  // ─── UI Filters (period, date, tab, sort, search, view mode…) ────────────────
+  const filters = useDashboardFilters();
+
+  // ─── Derived data (filtering, grouping, totals, chart data…) ─────────────────
+  const derived = usePeriodTransactions(transactions, {
+    selectedDate: filters.selectedDate,
+    period: filters.period,
+    activeTab: filters.activeTab,
+    sortOrder: filters.sortOrder,
+    searchQuery: filters.searchQuery,
   });
 
-  const [selectedDate, setSelectedDate] = React.useState(new Date());
-  const [period, setPeriod] = React.useState<Period>("day");
-  const [activeTab, setActiveTab] = React.useState<"all" | "income" | "expense">(
-    "all"
-  );
-  // Percentage mode state with smart default based on period
-  // Monthly → Income-based mode, Daily/Weekly → Cash flow proportion mode
-  const [percentageMode, setPercentageMode] = React.useState<PercentageMode>(
-    () => getDefaultModeForPeriod(period)
-  );
-  const { data: transactions, isLoading: transactionsLoading } =
-    useTransactions({ limit: 1000 });
-  const deleteTransaction = useDeleteTransaction();
-  const [showGrouped, setShowGrouped] = React.useState(true);
-  const [calendarOpen, setCalendarOpen] = React.useState(false);
+  // ─── Aggregates ───────────────────────────────────────────────────────────────
+  const totalBalance = accounts?.reduce((sum, acc) => sum + acc.balance, 0) ?? 0;
+  const income = report?.income ?? derived.periodTotals.income;
+  const expense = report?.expense ?? derived.periodTotals.expense;
+  const net = report?.net ?? (derived.periodTotals.income - derived.periodTotals.expense);
+
+  // ─── Dialog state ─────────────────────────────────────────────────────────────
+  const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [transactionToDelete, setTransactionToDelete] = React.useState<string | null>(null);
   const [errorDialogOpen, setErrorDialogOpen] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState<string>("");
-  const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
-  const [accountsExpanded, setAccountsExpanded] = React.useState(false);
-  const [sortOrder, setSortOrder] = React.useState<"date-desc" | "az" | "amount-desc" | "amount-asc">("date-desc");
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [searchOpen, setSearchOpen] = React.useState(false);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
-  const totalBalance =
-    accounts?.reduce((sum, acc) => sum + acc.balance, 0) || 0;
-
-  // Auto-switch percentage mode when period changes
-  // Monthly → Mode A (Income-based), Daily/Weekly → Mode B (Cash flow proportion)
-  React.useEffect(() => {
-    setPercentageMode(getDefaultModeForPeriod(period));
-  }, [period]);
-
-  // Reset search when switching grouped mode, period, or tab
-  React.useEffect(() => {
-    setSearchQuery("");
-    setSearchOpen(false);
-  }, [showGrouped, period, activeTab]);
-
-  // Auto-focus search input when it opens
-  React.useEffect(() => {
-    if (searchOpen && !showGrouped) {
-      searchInputRef.current?.focus();
-    }
-  }, [searchOpen, showGrouped]);
-
-  // Format date for display
-  const formatDateDisplay = (date: Date) => {
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  // Helpers for period ranges
-  const getStartOfDay = (date: Date) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  };
-
-  const getEndOfDay = (date: Date) => {
-    const d = new Date(date);
-    d.setHours(23, 59, 59, 999);
-    return d;
-  };
-
-  const getStartOfWeek = (date: Date) => {
-    const d = getStartOfDay(date);
-    const day = d.getDay(); // 0 (Sun) - 6 (Sat)
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday as first day
-    d.setDate(diff);
-    return d;
-  };
-
-  const getEndOfWeek = (date: Date) => {
-    const start = getStartOfWeek(date);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
-    return end;
-  };
-
-  const getStartOfMonth = (date: Date) => {
-    const d = getStartOfDay(date);
-    d.setDate(1);
-    return d;
-  };
-
-  const getEndOfMonth = (date: Date) => {
-    const d = getStartOfMonth(date);
-    d.setMonth(d.getMonth() + 1);
-    d.setDate(0);
-    d.setHours(23, 59, 59, 999);
-    return d;
-  };
-
-  const formatDateRangeDisplay = (date: Date, currentPeriod: Period) => {
-    if (currentPeriod === "day") return formatDateDisplay(date);
-
-    if (currentPeriod === "week") {
-      const start = getStartOfWeek(date);
-      const end = getEndOfWeek(date);
-      return `${start.toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-      })} - ${end.toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })}`;
-    }
-
-    const start = getStartOfMonth(date);
-    return start.toLocaleDateString("id-ID", {
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  // Filter transactions by period and type
-  const filteredTransactions = React.useMemo(() => {
-    if (!transactions) return [];
-    let filtered = transactions;
-
-    const start =
-      period === "day"
-        ? getStartOfDay(selectedDate)
-        : period === "week"
-        ? getStartOfWeek(selectedDate)
-        : getStartOfMonth(selectedDate);
-    const end =
-      period === "day"
-        ? getEndOfDay(selectedDate)
-        : period === "week"
-        ? getEndOfWeek(selectedDate)
-        : getEndOfMonth(selectedDate);
-
-    filtered = filtered.filter((t) => {
-      const d = new Date(t.occurredAt);
-      return d >= start && d <= end;
-    });
-
-    // Filter by type
-    if (activeTab === "income") {
-      filtered = filtered.filter((t) => t.type === "INCOME");
-    } else if (activeTab === "expense") {
-      filtered = filtered.filter((t) => t.type === "EXPENSE");
-    }
-
-    // Exclude transfer transactions
-    filtered = filtered.filter(
-      (t) => t.type !== "TRANSFER_DEBIT" && t.type !== "TRANSFER_CREDIT"
-    );
-
-    // Sort based on selected sort order
-    return filtered.sort((a, b) => {
-      if (sortOrder === "az") {
-        const nameA = (a.category?.name || "Other").toLowerCase();
-        const nameB = (b.category?.name || "Other").toLowerCase();
-        return nameA.localeCompare(nameB);
-      } else if (sortOrder === "amount-desc") {
-        return b.amount - a.amount;
-      } else if (sortOrder === "amount-asc") {
-        return a.amount - b.amount;
-      } else {
-        // date-desc (default: newest first)
-        return new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime();
-      }
-    });
-  }, [transactions, selectedDate, activeTab, period, sortOrder]);
-
-  // Fuse.js instance — recreated only when the filtered list changes
-  const fuseInstance = React.useMemo(
-    () =>
-      new Fuse(filteredTransactions, {
-        keys: [
-          { name: "category.name", weight: 0.5 },
-          { name: "note",           weight: 0.35 },
-          { name: "account.name",  weight: 0.15 },
-        ],
-        threshold: 0.4,     // 0 = exact, 1 = match anything
-        includeScore: false,
-        shouldSort: false,  // preserve sortOrder from filteredTransactions
-        ignoreLocation: true,
-        minMatchCharLength: 1,
-      }),
-    [filteredTransactions]
-  );
-
-  // Apply fuzzy search on top of already-filtered+sorted transactions
-  const searchedTransactions = React.useMemo(() => {
-    const q = searchQuery.trim();
-    if (!q) return filteredTransactions;
-    return fuseInstance.search(q).map((r) => r.item);
-  }, [searchQuery, filteredTransactions, fuseInstance]);
-
-  // Calculate income and expense totals for selected period
-  const periodTotals = React.useMemo(() => {
-    if (!filteredTransactions.length) return { income: 0, expense: 0 };
-
-    const income = filteredTransactions
-      .filter((t) => t.type === "INCOME")
-      .reduce((sum, t) => sum + t.amount, 0);
-    const expense = filteredTransactions
-      .filter((t) => t.type === "EXPENSE")
-      .reduce((sum, t) => sum + t.amount, 0);
-    return { income, expense };
-  }, [filteredTransactions]);
-
-  // Calculate category totals for chart (only for income/expense tabs and filtered transactions)
-  const categoryData = React.useMemo(() => {
-    if (activeTab === "all" || !filteredTransactions.length) return [];
-
-    const categoryMap = new Map<string, number>();
-    filteredTransactions.forEach((t) => {
-      const categoryName = t.category?.name || "Uncategorized";
-      categoryMap.set(
-        categoryName,
-        (categoryMap.get(categoryName) || 0) + t.amount
-      );
-    });
-
-    const total = Array.from(categoryMap.values()).reduce(
-      (sum, val) => sum + val,
-      0
-    );
-
-    return Array.from(categoryMap.entries())
-      .map(([name, value]) => ({
-        name,
-        value,
-        percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0",
-      }))
-      .sort((a, b) => b.value - a.value);
-  }, [filteredTransactions, activeTab]);
-
-  const totalAmount = categoryData.reduce((sum, item) => sum + item.value, 0);
-
-  const handleDelete = (id: string) => {
+  // ─── Handlers ─────────────────────────────────────────────────────────────────
+  const handleDelete = React.useCallback((id: string) => {
     setTransactionToDelete(id);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const confirmDelete = async () => {
+  const confirmDelete = React.useCallback(async () => {
     if (!transactionToDelete) return;
     try {
       await deleteTransaction.mutateAsync(transactionToDelete);
       setDeleteDialogOpen(false);
       setTransactionToDelete(null);
-    } catch (error: any) {
-      setErrorMessage(error.message || "Failed to delete transaction");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Failed to delete transaction";
+      setErrorMessage(msg);
       setErrorDialogOpen(true);
       setDeleteDialogOpen(false);
       setTransactionToDelete(null);
     }
-  };
+  }, [transactionToDelete, deleteTransaction]);
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Header & Total Balance */}
-      <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background">
-        <div className="flex items-start justify-between gap-3 md:gap-6">
-          <div className="space-y-1 md:space-y-1.5">
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Total Balance
-            </p>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">
-              {formatCurrency(totalBalance)}
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-              All accounts
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-1.5 md:gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-8 w-8 md:h-10 md:w-10 rounded-full"
-                asChild
-              >
-                <Link href="/dashboard/transfer">
-                  <ArrowLeftRight className="h-4 w-4 md:h-5 md:w-5" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
+    <div className="space-y-3 md:space-y-4">
+      {/* Balance + Summary */}
+      <BalanceHeader
+        totalBalance={totalBalance}
+        income={income}
+        expense={expense}
+        net={net}
+        reportLoading={reportLoading}
+        accountsLoading={accountsLoading}
+      />
 
-        {/* Summary strip */}
-        <Card className="border rounded-sm shadow-none mt-4">
-          <CardContent className="px-3 py-2 md:px-6 md:py-4">
-            <div className="flex items-center justify-between gap-3 text-xs md:text-base">
-              <div className="flex flex-col gap-0.5 md:gap-1">
-                <div className="flex items-center gap-1 md:gap-2 text-muted-foreground">
-                  <TrendingUp className="h-3 w-3 md:h-5 md:w-5 text-green-600" />
-                  <span>Income</span>
-                </div>
-                <span className="text-xs sm:text-sm md:text-xl font-semibold text-green-600">
-                  {reportLoading
-                    ? "..."
-                    : formatCurrency(report?.income || periodTotals.income)}
-                </span>
-              </div>
-              <div className="flex flex-col gap-0.5 md:gap-1">
-                <div className="flex items-center gap-1 md:gap-2 text-muted-foreground">
-                  <TrendingDown className="h-3 w-3 md:h-5 md:w-5 text-red-600" />
-                  <span>Expense</span>
-                </div>
-                <span className="text-xs sm:text-sm md:text-xl font-semibold text-red-600">
-                  {reportLoading
-                    ? "..."
-                    : formatCurrency(report?.expense || periodTotals.expense)}
-                </span>
-              </div>
-              <div className="flex flex-col gap-0.5 md:gap-1">
-                <div className="flex items-center gap-1 md:gap-2 text-muted-foreground">
-                  <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5 text-blue-500" />
-                  <span>Net</span>
-                </div>
-                <span
-                  className={cn(
-                    "text-xs sm:text-sm md:text-xl font-semibold",
-                    (report?.net || 0) >= 0 ? "text-green-600" : "text-red-600"
-                  )}
-                >
-                  {reportLoading
-                    ? "..."
-                    : formatCurrency(
-                        report?.net ??
-                          (periodTotals.income || 0) -
-                            (periodTotals.expense || 0)
-                      )}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Accounts + Chart & Transactions */}
-      <div className="space-y-3 md:space-y-4 md:grid md:grid-cols-[380px_1fr] lg:grid-cols-[420px_1fr] md:gap-4 lg:gap-6">
+      {/* Main grid: Accounts (left) | Chart + Transactions (right) */}
+      <div className="space-y-3 md:space-y-4 md:grid md:grid-cols-[360px_1fr] lg:grid-cols-[400px_1fr] md:gap-4 lg:gap-5 md:items-start md:px-4 lg:px-6 md:pb-6">
         {/* Accounts */}
-        <div className="p-4 bg-white sm:border sm:rounded-sm dark:bg-card dark:md:bg-background space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm sm:text-base md:text-lg font-semibold">Accounts</h2>
-            <Link href="/dashboard/accounts">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 font-medium text-primary text-xs sm:text-sm md:h-9 md:px-4"
-              >
-                Manage
-              </Button>
-            </Link>
-          </div>
-          {accountsLoading ? (
-            <div className="flex items-center justify-center py-3">
-              <Spinner className="h-6 w-6 text-muted-foreground" />
-            </div>
-          ) : accounts && accounts.length > 0 ? (
-            <div className="space-y-2 md:space-y-3">
-              {(accountsExpanded
-                ? [...accounts].sort((a, b) => {
-                    const order: Record<string, number> = { CASH: 0, BANK: 1, CARD: 2, OTHER: 3, E_WALLET: 4 };
-                    return (order[a.type] ?? 99) - (order[b.type] ?? 99);
-                  })
-                : [...accounts]
-                    .sort((a, b) => {
-                      const order: Record<string, number> = { CASH: 0, BANK: 1, CARD: 2, OTHER: 3, E_WALLET: 4 };
-                      return (order[a.type] ?? 99) - (order[b.type] ?? 99);
-                    })
-                    .slice(0, 5)
-              ).map((account) => {
-                const IconComponent =
-                  account.icon && Icons[account.icon as keyof typeof Icons]
-                    ? (Icons[
-                        account.icon as keyof typeof Icons
-                      ] as React.ComponentType<{ className?: string }>)
-                    : Icons.Wallet;
+        <AccountsList accounts={accounts} isLoading={accountsLoading} />
 
-                return (
-                  <div
-                    key={account.id}
-                    className="flex items-center justify-between gap-2 rounded-sm border bg-card px-3 py-2.5 md:px-4 md:py-4"
-                  >
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <div className="flex h-9 w-9 md:h-12 md:w-12 items-center justify-center rounded-full bg-primary/10">
-                        <IconComponent className="h-4 w-4 md:h-6 md:w-6 text-primary" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm sm:text-base font-medium">
-                          {account.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground capitalize">
-                          {account.type.toLowerCase().replace("_", " ")}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm sm:text-base md:text-lg font-semibold">
-                        {formatCurrency(account.balance, account.currency)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              {accounts.length > 5 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => setAccountsExpanded((prev) => !prev)}
-                >
-                  {accountsExpanded
-                    ? "Show less"
-                    : `Show ${accounts.length - 5} more account${accounts.length - 5 > 1 ? "s" : ""}`}
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-3">
-              <p className="text-muted-foreground mb-2 text-sm">
-                No accounts yet
-              </p>
-              <Link href="/dashboard/accounts">
-                <Button size="sm" className="h-8 text-xs">
-                  Create Account
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Chart & Transactions */}
+        {/* Chart + Transaction list */}
         <div className="space-y-3 md:space-y-4">
-          {/* Chart Section */}
-          <Card className="border rounded-none sm:rounded-sm bg-white dark:bg-card dark:md:bg-background shadow-none hover:shadow-md transition-shadow">
-            <CardHeader className="px-3 py-2.5 md:px-6 md:py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-sm md:text-lg font-semibold">
-                      {activeTab === "all"
-                        ? "Expense & Savings"
-                        : activeTab === "expense"
-                        ? "Expense by Category"
-                        : "Income by Category"}
-                    </CardTitle>
-                    <CardDescription className="text-xs md:text-sm">
-                      {formatDateRangeDisplay(selectedDate, period)}
-                    </CardDescription>
-                  </div>
-                  {/* Percentage Mode Toggle - Only shown for 'all' tab */}
-                  {activeTab === "all" && (
-                    <PercentageModeToggle
-                      mode={percentageMode}
-                      onModeChange={setPercentageMode}
-                      hasIncome={periodTotals.income > 0}
-                    />
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
-                {transactionsLoading ? (
-                  <div className="flex items-center justify-center py-6 md:py-12">
-                    <Spinner className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
-                  </div>
-                ) : activeTab === "all" ? (
-                  // Dual-mode financial visualization
-                  // Mode A (Income-based): Shows expense and savings as % of income
-                  // Mode B (Cash flow proportion): Shows proportion of total cash flow
-                  <IncomeExpenseChart
-                    income={periodTotals.income}
-                    expense={periodTotals.expense}
-                    mode={percentageMode}
-                  />
-                ) : categoryData.length > 0 ? (
-                  <DonutChart
-                    data={categoryData}
-                    totalAmount={totalAmount}
-                    title={`Total ${
-                      activeTab === "expense" ? "Expense" : "Income"
-                    }`}
-                  />
-                ) : (
-                  <div className="text-center py-6 md:py-12 text-muted-foreground text-sm md:text-base">
-                    No {activeTab} data for this period
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          <TransactionChart
+            activeTab={filters.activeTab}
+            period={filters.period}
+            selectedDate={filters.selectedDate}
+            periodTotals={derived.periodTotals}
+            categoryData={derived.categoryData}
+            totalAmount={derived.totalAmount}
+            percentageMode={filters.percentageMode}
+            onModeChange={filters.setPercentageMode}
+            isLoading={transactionsLoading}
+          />
 
-            {/* Transaction List */}
-            <Card className=" sm:my-0 border-x-0 sm:border rounded-none sm:rounded-sm shadow-none">
-              <CardHeader className="px-3 md:px-6 md:py-4 space-y-3 md:space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-sm md:text-lg font-semibold">
-                      Transactions
-                    </CardTitle>
-                    <CardDescription className="text-xs md:text-sm">
-                      View your {period === "day" ? "daily" : period} transactions
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {/* Sort Dropdown */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant={sortOrder !== "date-desc" ? "secondary" : "ghost"}
-                          className="h-8 w-8 md:h-9 md:w-9"
-                          title="Sort transactions"
-                        >
-                          <ArrowUpDown className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-48 p-1" align="end">
-                        <div className="flex flex-col gap-0.5">
-                          <p className="text-xs text-muted-foreground font-medium px-2 py-1">Sort by</p>
-                          <button
-                            onClick={() => setSortOrder("date-desc")}
-                            className={cn(
-                              "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left",
-                              sortOrder === "date-desc" && "bg-muted font-medium"
-                            )}
-                          >
-                            <ChevronRight className="h-3.5 w-3.5 rotate-90" />
-                            Terbaru
-                          </button>
-                          <button
-                            onClick={() => setSortOrder("az")}
-                            className={cn(
-                              "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left",
-                              sortOrder === "az" && "bg-muted font-medium"
-                            )}
-                          >
-                            <ArrowDownAZ className="h-3.5 w-3.5" />
-                            A – Z
-                          </button>
-                          <button
-                            onClick={() => setSortOrder("amount-desc")}
-                            className={cn(
-                              "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left",
-                              sortOrder === "amount-desc" && "bg-muted font-medium"
-                            )}
-                          >
-                            <ArrowDownUp className="h-3.5 w-3.5" />
-                            Nominal Terbesar
-                          </button>
-                          <button
-                            onClick={() => setSortOrder("amount-asc")}
-                            className={cn(
-                              "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left",
-                              sortOrder === "amount-asc" && "bg-muted font-medium"
-                            )}
-                          >
-                            <ArrowDownUp className="h-3.5 w-3.5 rotate-180" />
-                            Nominal Terkecil
-                          </button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    {/* Search button — only in individual mode */}
-                    {!showGrouped && (
-                      <Button
-                        size="icon"
-                        variant={searchOpen ? "secondary" : "ghost"}
-                        className="h-8 w-8 md:h-9 md:w-9"
-                        title="Search transactions"
-                        onClick={() => {
-                          setSearchOpen((prev) => !prev);
-                          if (searchOpen) setSearchQuery("");
-                        }}
-                      >
-                        <Search className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      size="icon"
-                      variant={showGrouped ? "secondary" : "ghost"}
-                      className="h-8 w-8 md:h-9 md:w-9"
-                      onClick={() => setShowGrouped((prev) => !prev)}
-                      title={showGrouped ? "Show individual" : "Show grouped"}
-                    >
-                      <Receipt className="h-4 w-4 md:h-4 md:w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Fuzzy Search Input — only visible in individual mode */}
-                {!showGrouped && searchOpen && (
-                  <div className="relative flex items-center">
-                    <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search by category, note, account…"
-                      className="w-full h-9 pl-8 pr-8 rounded-md border bg-muted/30 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label="Clear search"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Period Selector */}
-                <div className="flex items-center justify-center">
-                  <div className="flex items-center gap-1 rounded-md bg-muted/60 p-1">
-                    <Button
-                      size="sm"
-                      variant={period === "day" ? "default" : "ghost"}
-                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-md"
-                      onClick={() => setPeriod("day")}
-                    >
-                      Day
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={period === "week" ? "default" : "ghost"}
-                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-md"
-                      onClick={() => setPeriod("week")}
-                    >
-                      Week
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={period === "month" ? "default" : "ghost"}
-                      className="h-8 px-3 text-xs md:h-9 md:px-4 md:text-sm rounded-md"
-                      onClick={() => setPeriod("month")}
-                    >
-                      Month
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Date Navigation */}
-                <div className="flex items-center justify-center rounded-md border px-2 py-2 md:px-3 md:py-2.5 bg-muted/30">
-                  <div className="flex items-center gap-3 md:gap-2.5">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                        setSelectedDate(
-                          new Date(
-                            selectedDate.getTime() -
-                              (period === "day"
-                                ? 1
-                                : period === "week"
-                                ? 7
-                                : 30) *
-                                24 *
-                                60 *
-                                60 *
-                                1000
-                          )
-                        )
-                      }
-                      className="h-8 w-8 md:h-9 md:w-9 rounded-md bg-background hover:bg-muted"
-                    >
-                      <ChevronLeft className="h-4 w-4 md:h-4 md:w-4" />
-                    </Button>
-                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className={cn(
-                            "flex flex-col items-center justify-center h-auto py-1.5 px-3 md:px-4 hover:bg-muted rounded-md min-w-[120px] md:min-w-[140px]"
-                          )}
-                        >
-                          {getPeriodLabel(selectedDate, period) && (
-                            <span className="text-xs md:text-sm text-muted-foreground">
-                              {getPeriodLabel(selectedDate, period)}
-                            </span>
-                          )}
-                          <span className="text-sm md:text-base font-semibold">
-                            {formatDateRangeDisplay(selectedDate, period)}
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="center">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={(date) => {
-                            if (date) {
-                              setSelectedDate(date);
-                              setCalendarOpen(false);
-                            }
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                        setSelectedDate(
-                          new Date(
-                            selectedDate.getTime() +
-                              (period === "day"
-                                ? 1
-                                : period === "week"
-                                ? 7
-                                : 30) *
-                                24 *
-                                60 *
-                                60 *
-                                1000
-                          )
-                        )
-                      }
-                      className="h-8 w-8 md:h-9 md:w-9 rounded-md bg-background hover:bg-muted"
-                    >
-                      <ChevronRight className="h-4 w-4 md:h-4 md:w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Transaction Tabs */}
-                <Tabs
-                  value={activeTab}
-                  onValueChange={(v) => {
-                    setActiveTab(v as "all" | "income" | "expense");
-                  }}
-                >
-                  <TabsList className="grid w-full grid-cols-3 h-9 md:h-10 rounded-md bg-muted/60">
-                    <TabsTrigger
-                      value="all"
-                      className="text-xs sm:text-sm md:text-sm rounded-md data-[state=active]:bg-background"
-                    >
-                      All
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="expense"
-                      className="flex items-center gap-1 md:gap-1.5 text-xs sm:text-sm md:text-sm rounded-md data-[state=active]:bg-background"
-                    >
-                      <TrendingDown className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      <span>Exp</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="income"
-                      className="flex items-center gap-1 md:gap-1.5 text-xs sm:text-sm md:text-sm rounded-md data-[state=active]:bg-background"
-                    >
-                      <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      <span>Inc</span>
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value={activeTab} className="mt-3 md:mt-4">
-                    {transactionsLoading ? (
-                      <div className="flex items-center justify-center py-6 md:py-12">
-                        <Spinner className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
-                      </div>
-                    ) : filteredTransactions.length === 0 ? (
-                      <div className="text-center py-6 md:py-12">
-                        <p className="text-muted-foreground mb-1 text-sm md:text-base">
-                          No transactions found
-                        </p>
-                        <p className="text-xs md:text-sm text-muted-foreground">
-                          {activeTab === "all"
-                            ? `No transactions in this ${period}`
-                            : `No ${activeTab} transactions in this ${period}`}
-                        </p>
-                      </div>
-                    ) : !showGrouped && searchQuery.trim() && searchedTransactions.length === 0 ? (
-                      <div className="text-center py-6 md:py-12">
-                        <p className="text-muted-foreground mb-1 text-sm md:text-base">
-                          No results for &ldquo;{searchQuery}&rdquo;
-                        </p>
-                        <p className="text-xs md:text-sm text-muted-foreground">
-                          Try a different keyword
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 md:space-y-3">
-                        {showGrouped
-                          ? Object.entries(
-                              filteredTransactions.reduce((acc, t) => {
-                                const key = t.category?.name || "Other";
-                                if (!acc[key]) {
-                                  acc[key] = {
-                                    label: key,
-                                    total: 0,
-                                    isIncome: t.type === "INCOME",
-                                    items: [] as typeof filteredTransactions,
-                                  };
-                                }
-                                acc[key].total +=
-                                  t.amount * (t.type === "INCOME" ? 1 : -1);
-                                acc[key].items.push(t);
-                                return acc;
-                              }, {} as {
-                                [key: string]: {
-                                  label: string;
-                                  total: number;
-                                  isIncome: boolean;
-                                  items: typeof filteredTransactions;
-                                };
-                              })
-                            )
-                            // Sort groups based on sortOrder so grouped view
-                            // respects the same ordering intent as individual view.
-                            // date-desc keeps Object.entries insertion order
-                            // (which reflects the first-seen transaction per group,
-                            //  already date-sorted from filteredTransactions).
-                            .sort(([, groupA], [, groupB]) => {
-                              if (sortOrder === "az") {
-                                return groupA.label.localeCompare(groupB.label);
-                              }
-                              if (sortOrder === "amount-desc") {
-                                return Math.abs(groupB.total) - Math.abs(groupA.total);
-                              }
-                              if (sortOrder === "amount-asc") {
-                                return Math.abs(groupA.total) - Math.abs(groupB.total);
-                              }
-                              return 0; // date-desc: preserve insertion order
-                            })
-                            .map(([key, group]) => {
-                              const isPositive = group.total >= 0;
-                              const IconComponent =
-                                group.items[0]?.category?.icon &&
-                                Icons[
-                                  group.items[0].category
-                                    .icon as keyof typeof Icons
-                                ]
-                                  ? (Icons[
-                                      group.items[0].category
-                                        .icon as keyof typeof Icons
-                                    ] as React.ComponentType<{
-                                      className?: string;
-                                    }>)
-                                  : group.isIncome
-                                  ? TrendingUp
-                                  : TrendingDown;
-
-                              return (
-                                <div
-                                  key={key}
-                                  className="flex items-center justify-between rounded-sm border bg-card px-3 py-2.5 md:px-4 md:py-3"
-                                >
-                                  <div className="flex items-center gap-2.5 md:gap-3">
-                                    <div className="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-muted">
-                                      <IconComponent
-                                        className={cn(
-                                          "h-4 w-4 md:h-5 md:w-5",
-                                          group.isIncome
-                                            ? "text-green-600"
-                                            : "text-red-600"
-                                        )}
-                                      />
-                                    </div>
-                                    <div className="flex flex-col">
-                                      <span className="text-sm md:text-sm font-semibold">
-                                        {group.label}
-                                      </span>
-                                      <span className="text-xs md:text-xs text-muted-foreground">
-                                        {group.items.length} transaction
-                                        {group.items.length > 1 ? "s" : ""}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p
-                                      className={cn(
-                                        "text-sm sm:text-base md:text-base lg:text-lg font-bold",
-                                        isPositive
-                                          ? "text-green-600"
-                                          : "text-red-600"
-                                      )}
-                                    >
-                                      {group.total > 0 ? "+" : "-"}
-                                      {formatCurrency(Math.abs(group.total))}
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          : searchedTransactions.map((transaction) => {
-                              const isIncome = transaction.type === "INCOME";
-                              const CategoryIcon =
-                                transaction.category?.icon &&
-                                Icons[
-                                  transaction.category
-                                    .icon as keyof typeof Icons
-                                ]
-                                  ? (Icons[
-                                      transaction.category
-                                        .icon as keyof typeof Icons
-                                    ] as React.ComponentType<{
-                                      className?: string;
-                                    }>)
-                                  : isIncome
-                                  ? TrendingUp
-                                  : TrendingDown;
-
-                              return (
-                                <div
-                                  key={transaction.id}
-                                  className="flex items-center justify-between rounded-sm border bg-card px-3 py-2.5 md:px-4 md:py-3"
-                                >
-                                  <div className="flex items-center gap-2.5 md:gap-3 flex-1 min-w-0">
-                                    <div
-                                      className={cn(
-                                        "flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full",
-                                        isIncome
-                                          ? "bg-green-500/10 text-green-600"
-                                          : "bg-red-500/10 text-red-600"
-                                      )}
-                                    >
-                                      <CategoryIcon className="h-4 w-4 md:h-5 md:w-5" />
-                                    </div>
-                                    <div className="flex flex-col min-w-0 gap-1">
-                                      <span className="text-sm md:text-sm font-semibold">
-                                        {transaction.category?.name || "Other"}
-                                      </span>
-                                      {transaction.account?.name && (
-                                        <Badge variant="outline" className="text-xs w-fit">
-                                          {transaction.account.name}
-                                        </Badge>
-                                      )}
-                                      {transaction.note && (
-                                        <span className="text-xs md:text-xs text-muted-foreground truncate">
-                                          {transaction.note}
-                                        </span>
-                                      )}
-                                      <span className="text-xs md:text-xs text-muted-foreground">
-                                        {new Date(
-                                          transaction.occurredAt
-                                        ).toLocaleTimeString("id-ID", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col items-end gap-1 flex-shrink-0 pl-2 md:pl-4">
-                                    <p
-                                      className={cn(
-                                        "text-sm sm:text-base md:text-base lg:text-lg font-bold",
-                                        isIncome
-                                          ? "text-green-600"
-                                          : "text-red-600"
-                                      )}
-                                    >
-                                      {isIncome ? "+" : "-"}
-                                      {formatCurrency(
-                                        transaction.amount,
-                                        transaction.account?.currency || "IDR"
-                                      )}
-                                    </p>
-                                    <div className="flex items-center gap-1">
-                                      {transaction.type !== "TRANSFER_DEBIT" && 
-                                       transaction.type !== "TRANSFER_CREDIT" && (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          onClick={() => setEditingTransaction(transaction)}
-                                          className="h-7 w-7 md:h-8 md:w-8"
-                                          title="Edit transaction"
-                                        >
-                                          <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                                        </Button>
-                                      )}
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() =>
-                                          handleDelete(transaction.id)
-                                        }
-                                        className="h-7 w-7 md:h-8 md:w-8"
-                                        title="Delete transaction"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </CardHeader>
-            </Card>
-          </div>
-        </div>
-
-        {/* Floating Add Button */}
-        <div className="fixed bottom-20 right-4 md:bottom-10 md:right-10 z-30">
-          <TransactionForm
-            trigger={
-              <Button className="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg" size="icon">
-                <Plus className="h-5 w-5 md:h-6 md:w-6" />
-              </Button>
-            }
+          <TransactionList
+            filteredTransactions={derived.filteredTransactions}
+            searchedTransactions={derived.searchedTransactions}
+            groupedTransactions={derived.groupedTransactions}
+            isLoading={transactionsLoading}
+            period={filters.period}
+            onPeriodChange={filters.setPeriod}
+            selectedDate={filters.selectedDate}
+            onDateSelect={filters.setSelectedDate}
+            onNavigate={filters.navigateDate}
+            calendarOpen={filters.calendarOpen}
+            onCalendarOpenChange={filters.setCalendarOpen}
+            activeTab={filters.activeTab}
+            onTabChange={filters.setActiveTab}
+            sortOrder={filters.sortOrder}
+            onSortChange={filters.setSortOrder}
+            searchQuery={filters.searchQuery}
+            onSearchQueryChange={filters.setSearchQuery}
+            searchOpen={filters.searchOpen}
+            onSearchOpenChange={filters.setSearchOpen}
+            searchInputRef={filters.searchInputRef}
+            showGrouped={filters.showGrouped}
+            onShowGroupedToggle={() => filters.setShowGrouped((prev) => !prev)}
+            onEdit={setEditingTransaction}
+            onDelete={handleDelete}
           />
         </div>
+      </div>
 
+      {/* ── Floating Add Button ─────────────────────────────────────────────── */}
+      <div className="fixed bottom-20 right-4 md:bottom-8 md:right-8 z-30">
+        <TransactionForm
+          trigger={
+            <Button
+              className="h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg shadow-primary/20"
+              size="icon"
+            >
+              <Plus className="h-5 w-5 md:h-6 md:w-6" />
+            </Button>
+          }
+        />
+      </div>
 
-      {/* Edit Transaction Form */}
+      {/* ── Edit Transaction Form ───────────────────────────────────────────── */}
       {editingTransaction && (
         <TransactionForm
           transaction={editingTransaction}
           open={!!editingTransaction}
           onOpenChange={(open) => {
-            if (!open) {
-              setEditingTransaction(null);
-            }
+            if (!open) setEditingTransaction(null);
           }}
           onSuccess={() => setEditingTransaction(null)}
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* ── Delete Confirmation Dialog ──────────────────────────────────────── */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1163,11 +177,14 @@ export default function DashboardPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} disabled={deleteTransaction.isPending}>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteTransaction.isPending}
+            >
               {deleteTransaction.isPending ? (
-                <span className="flex items-center">
-                  <Spinner className="mr-2 h-4 w-4" />
-                  Deleting...
+                <span className="flex items-center gap-2">
+                  <Spinner className="h-4 w-4" />
+                  Deleting…
                 </span>
               ) : (
                 "Delete"
@@ -1177,7 +194,7 @@ export default function DashboardPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Error Dialog */}
+      {/* ── Error Dialog ────────────────────────────────────────────────────── */}
       <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1192,5 +209,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-

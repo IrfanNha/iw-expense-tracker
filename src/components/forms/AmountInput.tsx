@@ -85,7 +85,7 @@ export function AmountInput({
 
       <div
         className={cn(
-          "rounded-lg border bg-linear-to-br from-background to-muted/20 transition-all duration-200",
+          "rounded-lg border bg-background transition-all duration-200",
           ringColor
         )}
       >
