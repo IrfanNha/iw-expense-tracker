@@ -124,7 +124,7 @@ const DesktopSidebar = React.memo(function DesktopSidebar({
       {/* ── Brand ── */}
       <div className="flex items-center gap-2 px-4 py-[18px] shrink-0">
         <Logo width={22} height={22} />
-        <span className="text-[13px] font-semibold tracking-tight">IW Expense</span>
+        <span className="text-[13px] font-semibold tracking-tight">Irfanwork Expense</span>
       </div>
 
       {/* thin divider */}
@@ -243,7 +243,7 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Logo width={22} height={22} />
-              <h1 className="text-base font-semibold tracking-tight">IW Expense</h1>
+              <h1 className="text-base font-semibold tracking-tight">Irfanwork Expense</h1>
             </div>
             <div className="flex items-center gap-1.5">
               <ThemeToggle />

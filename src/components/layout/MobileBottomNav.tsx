@@ -33,7 +33,7 @@ import { Separator } from "@/components/ui/separator";
 // ─── Constants (defined once, outside component) ──────────────────────────────
 const PRIMARY_NAV = [
   { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
+  { href: "/dashboard/budgets", label: "Budgets", icon: PieChart },
   { href: "/dashboard/bills", label: "Bills", icon: Receipt },
   { href: "/dashboard/transfer", label: "Transfer", icon: ArrowLeftRight },
 ] as const;
@@ -198,6 +198,7 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
+  const [shouldRender, setShouldRender] = React.useState(false);
 
   // Stable handlers — prevent re-render of memoized children
   const handleClose = React.useCallback(() => setOpen(false), []);
@@ -210,6 +211,17 @@ export function MobileBottomNav() {
   React.useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  // Defer rendering of navigation list to prevent animation stutter on mobile
+  React.useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => setShouldRender(true), 50);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   const isMoreActive = !PRIMARY_NAV.some((n) => n.href === pathname);
 
@@ -297,16 +309,22 @@ export function MobileBottomNav() {
           <Separator className="shrink-0" />
 
           {/* Scrollable nav list */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-5">
-            {DRAWER_SECTIONS.map((section) => (
-              <DrawerSection
-                key={section.title}
-                title={section.title}
-                items={section.items}
-                pathname={pathname}
-                onClose={handleClose}
-              />
-            ))}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 space-y-5 min-h-[300px]">
+            {shouldRender ? (
+              DRAWER_SECTIONS.map((section) => (
+                <DrawerSection
+                  key={section.title}
+                  title={section.title}
+                  items={section.items}
+                  pathname={pathname}
+                  onClose={handleClose}
+                />
+              ))
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent opacity-50" />
+              </div>
+            )}
           </div>
 
           <Separator className="shrink-0" />
