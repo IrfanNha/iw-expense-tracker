@@ -40,9 +40,14 @@ export const TransactionItem = React.memo(function TransactionItem({
       : TrendingDown
   ) as unknown as React.ComponentType<{ className?: string }>;
 
-  const timeStr = new Date(transaction.occurredAt).toLocaleTimeString("id-ID", {
+  const date = new Date(transaction.occurredAt);
+  const timeStr = date.toLocaleTimeString("id-ID", {
     hour: "2-digit",
     minute: "2-digit",
+  });
+  const dateStr = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
   });
 
   return (
@@ -89,7 +94,7 @@ export const TransactionItem = React.memo(function TransactionItem({
           </div>
 
           <span className="text-[10px] text-muted-foreground/70 tabular-nums">
-            {timeStr}
+            {dateStr} · {timeStr}
           </span>
         </div>
       </div>

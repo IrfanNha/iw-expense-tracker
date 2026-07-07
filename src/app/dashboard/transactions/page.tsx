@@ -28,7 +28,7 @@ import { TransactionChart, TransactionList } from "@/components/dashboard";
 
 export default function TransactionsPage() {
   // ─── Data ─────────────────────────────────────────────────────────────────
-  const { data: transactions, isLoading: transactionsLoading } = useTransactions({ limit: 1000 });
+  const { data: transactions, isLoading: transactionsLoading } = useTransactions({ limit: 9999 });
   const deleteTransaction = useDeleteTransaction();
 
   // ─── Shared filter state ───────────────────────────────────────────────────
