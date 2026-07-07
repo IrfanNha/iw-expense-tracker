@@ -35,13 +35,16 @@ export interface TurnstileRef {
   reset: () => void;
 }
 
-export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(({
-  onVerify,
-  onError,
-  onExpire,
-  theme = "auto",
-  size: propSize = "normal",
-}, ref) => {
+export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>((
+  {
+    onVerify,
+    onError,
+    onExpire,
+    theme = "auto",
+    size: propSize = "normal",
+  },
+  ref
+) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -51,9 +54,16 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(({
   // Use compact size on mobile, otherwise use prop size
   const size = isMobile ? "compact" : propSize;
 
-  // Check if Turnstile should be disabled (development mode)
-  const isDevelopment = process.env.NEXT_PUBLIC_APP_ENV === "development" || 
-                        process.env.NODE_ENV === "development";
+  /**
+   * Client-side Turnstile enabled check.
+   * Mirrors the server-side isTurnstileEnabled logic:
+   * - development → always OFF
+   * - production  → ON unless NEXT_PUBLIC_ENABLE_TURNSTILE="false"
+   */
+  const isTurnstileEnabled =
+    process.env.NEXT_PUBLIC_APP_ENV !== "development" &&
+    process.env.NODE_ENV !== "development" &&
+    process.env.NEXT_PUBLIC_ENABLE_TURNSTILE !== "false";
 
   const reset = () => {
     if (widgetIdRef.current && window.turnstile) {
@@ -66,25 +76,19 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(({
     }
   };
 
-  useImperativeHandle(ref, () => ({
-    reset,
-  }));
+  useImperativeHandle(ref, () => ({ reset }));
 
-  // Auto-verify in development mode
+  // Auto-verify when Turnstile is disabled
   useEffect(() => {
-    if (isDevelopment) {
-      // Simulate successful verification in development
-      onVerify("development-bypass-token");
+    if (!isTurnstileEnabled) {
+      onVerify("bypass-token");
       setIsLoaded(true);
-      return;
     }
-  }, [isDevelopment, onVerify]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTurnstileEnabled]);
 
   useEffect(() => {
-    // Skip loading Turnstile in development
-    if (isDevelopment) {
-      return;
-    }
+    if (!isTurnstileEnabled) return;
 
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -99,40 +103,29 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(({
       return;
     }
 
-    // Load Turnstile script
     const script = document.createElement("script");
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
     script.async = true;
     script.defer = true;
-
-    script.onload = () => {
-      setIsLoaded(true);
-    };
-
-    script.onerror = () => {
-      setError("Failed to load Turnstile script");
-    };
+    script.onload = () => setIsLoaded(true);
+    script.onerror = () => setError("Failed to load Turnstile script");
 
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup
       if (widgetIdRef.current && window.turnstile) {
         try {
           window.turnstile.remove(widgetIdRef.current);
-        } catch (e) {
+        } catch {
           // Ignore cleanup errors
         }
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    // Skip rendering in development
-    if (isDevelopment) {
-      return;
-    }
-
+    if (!isTurnstileEnabled) return;
     if (!isLoaded || !containerRef.current || widgetIdRef.current) return;
 
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -162,10 +155,10 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(({
       setError("Failed to render Turnstile");
       console.error("Turnstile render error:", e);
     }
-  }, [isLoaded, onVerify, onError, onExpire, theme, size, isDevelopment]);
+  }, [isLoaded, onVerify, onError, onExpire, theme, size, isTurnstileEnabled]);
 
-  // Don't render anything in development
-  if (isDevelopment) {
+  // Don't render the widget when disabled
+  if (!isTurnstileEnabled) {
     return null;
   }
 
@@ -195,4 +188,3 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(({
 });
 
 Turnstile.displayName = "Turnstile";
-

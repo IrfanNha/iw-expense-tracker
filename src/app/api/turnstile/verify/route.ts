@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
+import { isTurnstileEnabled } from "@/lib/feature-flags";
 
 export async function POST(req: Request) {
   try {
-    // Check if Turnstile should be disabled (development mode)
-    const isDevelopment = process.env.APP_ENV === "development" || 
-                          process.env.NODE_ENV === "development";
-
-    // Skip verification in development
-    if (isDevelopment) {
+    // Bypass verification when Turnstile is disabled
+    if (!isTurnstileEnabled) {
       return NextResponse.json({ success: true });
     }
 
@@ -35,13 +32,8 @@ export async function POST(req: Request) {
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          secret: secretKey,
-          response: token,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret: secretKey, response: token }),
       }
     );
 

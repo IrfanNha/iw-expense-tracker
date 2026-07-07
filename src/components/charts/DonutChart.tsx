@@ -3,12 +3,7 @@
 import dynamic from "next/dynamic";
 import { formatCurrency } from "@/lib/money";
 
-const COLORS = [
-  "#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16",
-  "#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9",
-  "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
-  "#ec4899", "#f43f5e"
-];
+import { CHART_COLORS } from "@/lib/colors";
 
 interface DonutChartProps {
   data: Array<{ name: string; value: number; percentage: string }>;
@@ -36,7 +31,7 @@ const ChartContent = dynamic(
                 dataKey="value"
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip
@@ -81,7 +76,7 @@ export function DonutChart({ data, totalAmount, title }: DonutChartProps) {
             <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
               <div
                 className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
               />
               <span className="truncate">{item.name}</span>
             </div>

@@ -3,18 +3,23 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validators";
 import bcrypt from "bcryptjs";
+import { isRegisterEnabled, isTurnstileEnabled } from "@/lib/feature-flags";
 
 export async function POST(req: Request) {
-  try {
-    // Check if Turnstile should be disabled (development mode)
-    const isDevelopment = process.env.APP_ENV === "development" || 
-                          process.env.NODE_ENV === "development";
+  // ── Feature flag: block registration if disabled ──────────────────────────
+  if (!isRegisterEnabled) {
+    return NextResponse.json(
+      { error: "Registration is currently disabled." },
+      { status: 403 }
+    );
+  }
 
+  try {
     const json = await req.json();
     const { turnstileToken, ...userData } = json;
 
-    // Verify Turnstile token only in production
-    if (!isDevelopment) {
+    // ── Turnstile verification (only when enabled) ─────────────────────────
+    if (isTurnstileEnabled) {
       if (!turnstileToken) {
         return NextResponse.json(
           { error: "Security verification is required" },
@@ -29,10 +34,7 @@ export async function POST(req: Request) {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              secret: secretKey,
-              response: turnstileToken,
-            }),
+            body: JSON.stringify({ secret: secretKey, response: turnstileToken }),
           }
         );
 
@@ -58,10 +60,7 @@ export async function POST(req: Request) {
     const { name, email, pin } = parsed.data;
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json(
         { error: "User with this email already exists" },
@@ -69,23 +68,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash PIN
+    // Hash PIN and create user
     const saltRounds = parseInt(process.env.PIN_SALT_ROUNDS || "12", 10);
     const hashedPin = await bcrypt.hash(pin, saltRounds);
 
-    // Create user
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        hashedPin,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-      },
+      data: { name, email, hashedPin },
+      select: { id: true, name: true, email: true, createdAt: true },
     });
 
     return NextResponse.json({ user }, { status: 201 });

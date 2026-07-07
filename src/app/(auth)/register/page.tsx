@@ -25,9 +25,12 @@ export default function RegisterPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileRef | null>(null);
 
-  // Check if Turnstile should be disabled (development mode)
-  const isDevelopment = process.env.NEXT_PUBLIC_APP_ENV === "development" || 
-                        process.env.NODE_ENV === "development";
+  // Mirrors the server-side isTurnstileEnabled hierarchy:
+  // - development → always OFF; production → ON unless flag is "false"
+  const isTurnstileEnabled =
+    process.env.NEXT_PUBLIC_APP_ENV !== "development" &&
+    process.env.NODE_ENV !== "development" &&
+    process.env.NEXT_PUBLIC_ENABLE_TURNSTILE !== "false";
 
   const form = useForm<FormData>({
     resolver: zodResolver(registerSchema),
@@ -56,8 +59,8 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError(null);
 
-    // Skip Turnstile validation in development
-    if (!isDevelopment) {
+    // Skip Turnstile validation when disabled
+    if (isTurnstileEnabled) {
       // Validate Turnstile token
       if (!turnstileToken) {
         setError("Please complete the security verification");
@@ -290,7 +293,7 @@ export default function RegisterPage() {
               <Button 
                 type="submit" 
                 className="w-full h-11 rounded-xl text-base font-semibold" 
-                disabled={isLoading || (!isDevelopment && !turnstileToken)}
+                disabled={isLoading || (isTurnstileEnabled && !turnstileToken)}
               >
                 {isLoading ? (
                   <>
