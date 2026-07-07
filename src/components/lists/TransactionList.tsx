@@ -19,7 +19,7 @@ export function TransactionList({ onDelete }: TransactionListProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 20;
 
-  const { data: transactions, isLoading } = useTransactions({ limit: 1000 });
+  const { data: transactions, isLoading } = useTransactions({ limit: 9999 });
 
   const filteredTransactions = React.useMemo(() => {
     if (!transactions) return [];
@@ -193,6 +193,11 @@ export function TransactionList({ onDelete }: TransactionListProps) {
                                 )}
                               </p>
                               <p className="text-xs text-muted-foreground">
+                                {new Date(transaction.occurredAt).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                                {" · "}
                                 {new Date(transaction.occurredAt).toLocaleTimeString("id-ID", {
                                   hour: "2-digit",
                                   minute: "2-digit",

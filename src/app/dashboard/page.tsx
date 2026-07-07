@@ -30,7 +30,7 @@ import {
 export default function DashboardPage() {
   // ─── Data ────────────────────────────────────────────────────────────────────
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
-  const { data: transactions, isLoading: transactionsLoading } = useTransactions({ limit: 1000 });
+  const { data: transactions, isLoading: transactionsLoading } = useTransactions({ limit: 9999 });
   const { data: report, isLoading: reportLoading } = useMonthlyReport();
   const deleteTransaction = useDeleteTransaction();
 
