@@ -8,6 +8,7 @@
  */
 
 import { DonutChart } from "@/components/charts/DonutChart";
+import { CHART_COLORS } from "@/lib/colors";
 import { formatCurrency } from "@/lib/money";
 import type { AnnualReportDTO } from "@/lib/report/annual-report";
 
@@ -53,7 +54,7 @@ export function AnnualCategorySection({ topCategories, totalExpense }: Props) {
                     <div
                       className="h-2.5 w-2.5 rounded-full shrink-0"
                       style={{
-                        background: `var(--chart-${(index % 5) + 1})`,
+                        backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
                       }}
                     />
                     <span className="text-sm font-medium truncate">
@@ -74,7 +75,7 @@ export function AnnualCategorySection({ topCategories, totalExpense }: Props) {
                       className="h-full rounded-full transition-all duration-500 ease-in-out"
                       style={{
                         width: `${category.percentageOfExpense}%`,
-                        background: `var(--chart-${(index % 5) + 1})`,
+                        backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
                       }}
                     />
                   </div>

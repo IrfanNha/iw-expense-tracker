@@ -458,8 +458,9 @@ export function TransactionForm({
   // Defer rendering of heavy form content to prevent animation stutter on mobile
   React.useEffect(() => {
     if (open) {
-      // 50ms is enough to let the browser start the CSS animation smoothly
-      const timer = setTimeout(() => setShouldRender(true), 50);
+      // 300ms matches the Sheet open animation duration perfectly.
+      // This ensures the heavy React mount happens *after* the CSS animation completes, removing all jank.
+      const timer = setTimeout(() => setShouldRender(true), 300);
       return () => clearTimeout(timer);
     } else {
       // Add a slight delay before unmounting to allow the close animation to finish
