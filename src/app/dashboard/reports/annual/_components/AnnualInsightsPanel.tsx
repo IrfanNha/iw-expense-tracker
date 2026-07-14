@@ -1,115 +1,210 @@
 /**
  * AnnualInsightsPanel — Server Component
  *
- * Menampilkan insight finansial (peak spending, saving pattern, volatility).
- * Konten ini sepenuhnya statis — tidak ada state, event handler, atau interaksi.
- * Berjalan di server → nol JS dikirim ke klien untuk section ini.
+ * Financial insights rendered as a professional row-based table,
+ * consistent with AnnualRatiosSection style.
+ * Zero JS shipped to the client.
  */
 
-import { Flame, ShieldAlert, Activity, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/lib/money";
-import type { AnnualReportDTO } from "@/lib/report/annual-report";
 import { cn } from "@/lib/utils";
+import type { AnnualReportDTO } from "@/lib/report/annual-report";
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
 ];
 
 interface Props {
   insights: AnnualReportDTO["insights"];
   totals: AnnualReportDTO["totals"];
+  monthlyTrend: AnnualReportDTO["monthlyTrend"];
 }
 
-export function AnnualInsightsPanel({ insights, totals }: Props) {
-  const isDeficit = totals.expense > totals.income;
+// ─── Shared row — same shape as AnnualRatiosSection ──────────────────────────
+
+function InsightRow({
+  label,
+  note,
+  value,
+  valueSub,
+  status,
+}: {
+  label: string;
+  note?: string;
+  value: string;
+  valueSub?: string;
+  status: "positive" | "neutral" | "warning" | "critical";
+}) {
+  const dotColor = {
+    positive: "bg-emerald-500",
+    neutral:  "bg-muted-foreground/40",
+    warning:  "bg-amber-500",
+    critical: "bg-rose-500",
+  }[status];
+
+  const valueColor = {
+    positive: "text-emerald-500",
+    neutral:  "text-foreground",
+    warning:  "text-amber-500",
+    critical: "text-rose-500",
+  }[status];
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 md:p-6 transition-colors hover:bg-accent/10">
-      <div className="mb-6">
+    <div className="flex items-center justify-between gap-4 py-3 border-b border-border/40 last:border-0">
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-muted-foreground leading-none truncate">{label}</p>
+        {note && (
+          <p className="text-[10px] text-muted-foreground/50 mt-0.5 truncate">{note}</p>
+        )}
+      </div>
+      <div className="flex items-center gap-2 shrink-0 text-right">
+        <span className={cn("inline-block h-1.5 w-1.5 rounded-full shrink-0", dotColor)} />
+        <div>
+          <p className={cn("text-sm font-semibold tabular-nums leading-none", valueColor)}>
+            {value}
+          </p>
+          {valueSub && (
+            <p className="text-[10px] text-muted-foreground/60 mt-0.5">{valueSub}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export function AnnualInsightsPanel({ insights, totals, monthlyTrend }: Props) {
+  const isDeficit = totals.expense > totals.income;
+
+  const avgMonthlyExpense =
+    monthlyTrend.length > 0
+      ? monthlyTrend.reduce((s, m) => s + m.expense, 0) / monthlyTrend.length
+      : 0;
+
+  const peakMonth = insights.highestExpenseMonth
+    ? monthlyTrend.find((m) => m.month === insights.highestExpenseMonth)
+    : null;
+
+  const peakAboveAvg =
+    peakMonth && avgMonthlyExpense > 0
+      ? ((peakMonth.expense - avgMonthlyExpense) / avgMonthlyExpense) * 100
+      : null;
+
+  const lowestSavingData = insights.lowestSavingMonth
+    ? monthlyTrend.find((m) => m.month === insights.lowestSavingMonth)
+    : null;
+
+  const bestSavingData =
+    monthlyTrend.length > 0
+      ? monthlyTrend.reduce((best, m) => (m.net > best.net ? m : best), monthlyTrend[0])
+      : null;
+
+  const volatilityStatus: "positive" | "neutral" | "warning" | "critical" =
+    insights.expenseVolatility === "LOW" ? "positive"
+    : insights.expenseVolatility === "MEDIUM" ? "neutral"
+    : "critical";
+
+  const volatilityValue =
+    insights.expenseVolatility === "LOW" ? "Stable"
+    : insights.expenseVolatility === "MEDIUM" ? "Moderate"
+    : "Erratic";
+
+  const volatilityNote =
+    insights.expenseVolatility === "LOW" ? "Predictable month-to-month spending"
+    : insights.expenseVolatility === "MEDIUM" ? "Minor variation across months"
+    : "High variation - consider stricter budgets";
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-card p-4 md:p-6">
+      <div className="mb-4">
         <h2 className="text-base md:text-lg font-semibold">Financial Insights</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Key patterns and recommendations based on your activity
+          Key patterns and action points based on your activity
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* Deficit Warning (Takes full width if present) */}
-        {isDeficit && (
-          <div className="md:col-span-2 lg:col-span-3 rounded-lg border border-rose-500/30 bg-rose-500/5 p-4 flex gap-4 items-start">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/10 mt-0.5">
-              <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-rose-600 dark:text-rose-400 mb-1">Deficit Alert</h4>
-              <p className="text-xs md:text-sm text-foreground/80 leading-relaxed">
-                Pengeluaran Anda melebihi pendapatan sebesar <strong>{formatCurrency(Math.abs(totals.net))}</strong>. 
-                Disarankan untuk segera meninjau kembali kategori pengeluaran terbesar Anda dan menyesuaikan budget.
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Deficit alert — inline banner, not a card */}
+      {isDeficit && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-xs">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" />
+          <span className="text-rose-500 font-semibold uppercase tracking-wider text-[10px] shrink-0">
+            Deficit
+          </span>
+          <span className="text-muted-foreground">
+            Spending exceeded income by{" "}
+            <strong className="text-foreground tabular-nums">
+              {formatCurrency(Math.abs(totals.net))}
+            </strong>
+            . Review largest expense categories.
+          </span>
+        </div>
+      )}
 
-        {/* Highest Expense Month */}
-        {insights.highestExpenseMonth && (
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-4 flex gap-4 items-start">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500/10 mt-0.5">
-              <Flame className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-1">Peak Spending</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Pengeluaran tertinggi Anda tahun ini terjadi di bulan <strong className="text-foreground">{MONTH_NAMES[insights.highestExpenseMonth - 1]}</strong>.
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Two-column row table — mirrors AnnualRatiosSection */}
+      <div className="grid gap-x-8 md:grid-cols-2">
+        {/* Left column */}
+        <div>
+          {peakMonth && (
+            <InsightRow
+              label="Peak Spending Month"
+              note={
+                peakAboveAvg !== null && peakAboveAvg > 0
+                  ? `${peakAboveAvg.toFixed(0)}% above monthly average`
+                  : "Highest expense month"
+              }
+              value={MONTH_NAMES[peakMonth.month - 1]}
+              valueSub={formatCurrency(peakMonth.expense)}
+              status="warning"
+            />
+          )}
 
-        {/* Lowest Saving Month */}
-        {insights.lowestSavingMonth && (
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-4 flex gap-4 items-start">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/10 mt-0.5">
-              <ShieldAlert className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-1">Saving Pattern</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Pola tabungan paling lemah tercatat pada bulan <strong className="text-foreground">{MONTH_NAMES[insights.lowestSavingMonth - 1]}</strong>.
-              </p>
-            </div>
-          </div>
-        )}
+          {lowestSavingData && (
+            <InsightRow
+              label="Weakest Saving Month"
+              note="Lowest net savings recorded"
+              value={MONTH_NAMES[lowestSavingData.month - 1]}
+              valueSub={formatCurrency(lowestSavingData.net)}
+              status={lowestSavingData.net < 0 ? "critical" : "warning"}
+            />
+          )}
 
-        {/* Expense Volatility */}
-        <div className={cn(
-          "rounded-lg border p-4 flex gap-4 items-start",
-          insights.expenseVolatility === "HIGH" ? "border-rose-500/30 bg-rose-500/5" : "border-border/60 bg-muted/30"
-        )}>
-          <div className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full mt-0.5",
-            insights.expenseVolatility === "HIGH" ? "bg-rose-500/10" : "bg-emerald-500/10"
-          )}>
-            <Activity className={cn(
-              "h-5 w-5",
-              insights.expenseVolatility === "HIGH" ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
-            )} />
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold mb-1">Spending Consistency</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Volatilitas pengeluaran bulanan Anda terpantau <strong className="text-foreground">
-                {insights.expenseVolatility === "LOW"
-                  ? "Rendah (Stabil)"
-                  : insights.expenseVolatility === "MEDIUM"
-                  ? "Sedang"
-                  : "Tinggi (Tidak Teratur)"}
-              </strong>.
-              {insights.expenseVolatility === "HIGH" &&
-                " Pertimbangkan untuk membuat budgeting yang lebih ketat."}
-            </p>
-          </div>
+          {bestSavingData && bestSavingData.net > 0 && (
+            <InsightRow
+              label="Best Saving Month"
+              note="Highest net savings recorded"
+              value={bestSavingData.monthName}
+              valueSub={`+${formatCurrency(bestSavingData.net)}`}
+              status="positive"
+            />
+          )}
         </div>
 
+        {/* Right column */}
+        <div>
+          <InsightRow
+            label="Spending Consistency"
+            note={volatilityNote}
+            value={volatilityValue}
+            status={volatilityStatus}
+          />
+
+          <InsightRow
+            label="Annual Cash Flow"
+            note={isDeficit ? "Spending exceeds income" : "Income exceeds spending"}
+            value={isDeficit ? "Deficit" : "Surplus"}
+            valueSub={formatCurrency(Math.abs(totals.net))}
+            status={isDeficit ? "critical" : "positive"}
+          />
+
+          <InsightRow
+            label="Active Months"
+            note={`${monthlyTrend.length} month${monthlyTrend.length !== 1 ? "s" : ""} with transactions`}
+            value={`${monthlyTrend.length} mo`}
+            status="neutral"
+          />
+        </div>
       </div>
     </div>
   );

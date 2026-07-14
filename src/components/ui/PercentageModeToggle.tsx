@@ -67,7 +67,7 @@ export function PercentageModeToggle({
               </p>
               {modeADisabled && (
                 <p className="text-yellow-600 mt-1 text-[10px]">
-                  ⚠️ Memerlukan data income
+                  ⚠️ Income data required
                 </p>
               )}
             </TooltipContent>
@@ -96,7 +96,7 @@ export function PercentageModeToggle({
                 {PERCENTAGE_MODE_DESCRIPTIONS[PercentageMode.CASH_FLOW_PROPORTION]}
               </p>
               <p className="text-amber-600 mt-1 text-[10px]">
-                ℹ️ Visualisasi deskriptif, bukan metrik kesehatan keuangan
+                ℹ️ Descriptive view only
               </p>
             </TooltipContent>
           </Tooltip>
@@ -116,22 +116,22 @@ export function PercentageModeToggle({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-sm text-xs">
-            <p className="font-semibold mb-2">Tentang Mode Persentase:</p>
+            <p className="font-semibold mb-2">Percentage Modes:</p>
             <div className="space-y-2">
               <div>
                 <p className="font-medium text-green-600">
-                  Basis Income (Bulanan)
+                  Income-based (Monthly)
                 </p>
                 <p className="text-muted-foreground text-[10px]">
-                  Cocok untuk analisis bulanan. Menunjukkan berapa persen income yang digunakan untuk expense dan saving.
+                  Best for monthly analysis. Shows what % of income goes to expense vs. savings.
                 </p>
               </div>
               <div>
                 <p className="font-medium text-blue-600">
-                  Proporsi Arus Kas (Harian/Mingguan)
+                  Cash Flow Proportion (Daily / Weekly)
                 </p>
                 <p className="text-muted-foreground text-[10px]">
-                  Cocok untuk tampilan harian/mingguan saat income tidak stabil. Menunjukkan proporsi visual saja.
+                  Best when income is sporadic. Visual proportion only, not a financial health metric.
                 </p>
               </div>
             </div>

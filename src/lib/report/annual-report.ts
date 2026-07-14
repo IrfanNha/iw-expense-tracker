@@ -1,261 +1,340 @@
 /**
  * Annual Report Data Access Layer
- * 
- * CRITICAL RULES:
- * 1. NEVER query Transaction table for annual reports
- * 2. Use ONLY pre-aggregated tables:
- *    - MonthlySummary
- *    - MonthlyCategorySummary
- *    - AnnualSummary (optional cache)
- * 3. All percentages MUST be income-based
- * 4. Expense% + Savings% = 100% (relative to income)
- * 
- * WHY:
- * - Transaction table is for real-time operations
- * - Annual reports need pre-aggregated data for performance
- * - Income is the financial baseline (100% of available resources)
+ *
+ * SECURITY RULES:
+ * 1. `userId` ALWAYS sourced from server session — never from client input
+ * 2. NEVER query Transaction table directly for reports
+ * 3. Use ONLY pre-aggregated tables: MonthlySummary, MonthlyCategorySummary
+ * 4. DTO shape exposes only what the UI needs — no internal DB metadata
+ * 5. All computation server-side — client receives final, safe DTO
+ *
+ * CACHING:
+ * - React `cache()` deduplicates identical calls within a single server render
+ * - No redundant DB roundtrips if getAnnualReport is called multiple times
  */
 
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { ensureMonthlySummariesForRange } from "@/lib/summary/ensure-monthly-summary";
 
-/**
- * Annual Report Data Transfer Object
- * 
- * This structure is optimized for UI consumption.
- * All calculations are done server-side to minimize client work.
- */
+// ─── DTO ──────────────────────────────────────────────────────────────────────
+
+export type MonthCategoryEntry = {
+  /** Stable key for React list rendering (user's own data — safe to expose) */
+  categoryId: string;
+  categoryName: string;
+  amount: number;
+  type: "INCOME" | "EXPENSE";
+  /** % relative to month's total for the same type */
+  percentage: number;
+};
+
+export type MonthCategoryBreakdown = {
+  month: number;
+  monthName: string;
+  totalIncome: number;
+  totalExpense: number;
+  categories: MonthCategoryEntry[];
+};
+
+export type AnnualRatios = {
+  /** % of income saved: (net / income) × 100 */
+  savingsRate: number;
+  /** % of income spent: (expense / income) × 100 */
+  expenseRatio: number;
+  /** Average monthly income over the period */
+  avgMonthlyIncome: number;
+  /** Average monthly expense over the period */
+  avgMonthlyExpense: number;
+  /**
+   * How many months the cumulative net surplus could sustain avg spending.
+   * null when net ≤ 0 (deficit).
+   */
+  monthsOfSurplus: number | null;
+  /** Count of months where net < 0 */
+  deficitMonthsCount: number;
+  /** Month with highest net savings */
+  bestSavingMonth: { month: number; monthName: string; net: number } | null;
+  /** Month with highest expense */
+  worstSpendingMonth: { month: number; monthName: string; expense: number } | null;
+  /** Derived from expense volatility coefficient of variation */
+  consistencyScore: "EXCELLENT" | "GOOD" | "FAIR" | "POOR";
+};
+
 export type AnnualReportDTO = {
   year: number;
   range: {
-    fromMonth: number; // 1-12
-    toMonth: number;   // 1-12
+    fromMonth: number;
+    toMonth: number;
   };
 
   /** Core financial metrics */
   totals: {
-    income: number;        // Total income in cents
-    expense: number;       // Total expense in cents
-    net: number;           // Income - Expense
-    expenseRate: number;   // (expense / income) * 100
-    savingRate: number;    // (net / income) * 100
+    income: number;
+    expense: number;
+    net: number;
+    expenseRate: number;
+    savingRate: number;
   };
 
-  /** Month-by-month breakdown for trend visualization */
+  /** Month-by-month breakdown for trend chart */
   monthlyTrend: Array<{
-    month: number;         // 1-12
-    monthName: string;     // "January", "February", etc.
+    month: number;
+    monthName: string;
     income: number;
     expense: number;
     net: number;
   }>;
 
-  /** Top spending categories */
+  /** Annual top expense categories (aggregated across all months) */
   topCategories: Array<{
     categoryId: string;
     categoryName: string;
     amount: number;
-    percentageOfExpense: number;  // Relative to TOTAL expense, not income
+    percentageOfExpense: number;
   }>;
 
-  /** Actionable insights for decision-making */
+  /** Per-month category breakdown for the Monthly Category Browser */
+  monthlyCategoryBreakdown: MonthCategoryBreakdown[];
+
+  /** Derived financial ratios for the Ratios section */
+  ratios: AnnualRatios;
+
+  /** Actionable insights */
   insights: {
-    highestExpenseMonth: number | null;  // Month number (1-12)
-    lowestSavingMonth: number | null;    // Month number (1-12)
+    highestExpenseMonth: number | null;
+    lowestSavingMonth: number | null;
     expenseVolatility: "LOW" | "MEDIUM" | "HIGH";
   };
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "July", "August", "September", "October", "November", "December",
 ];
 
-/**
- * Calculate expense volatility based on standard deviation
- * 
- * WHY: Helps users understand spending consistency
- * - LOW: Predictable spending
- * - MEDIUM: Some variation
- * - HIGH: Erratic spending (needs attention)
- */
 function calculateVolatility(expenses: number[]): "LOW" | "MEDIUM" | "HIGH" {
   if (expenses.length < 2) return "LOW";
-
   const mean = expenses.reduce((a, b) => a + b, 0) / expenses.length;
-  const variance = expenses.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / expenses.length;
-  const stdDev = Math.sqrt(variance);
-  
-  // Coefficient of variation (CV)
-  const cv = mean > 0 ? (stdDev / mean) : 0;
-
+  const variance = expenses.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / expenses.length;
+  const cv = mean > 0 ? Math.sqrt(variance) / mean : 0;
   if (cv < 0.15) return "LOW";
   if (cv < 0.30) return "MEDIUM";
   return "HIGH";
 }
 
+function volatilityToConsistency(v: "LOW" | "MEDIUM" | "HIGH"): AnnualRatios["consistencyScore"] {
+  if (v === "LOW") return "EXCELLENT";
+  if (v === "MEDIUM") return "GOOD";
+  return "POOR";
+}
+
+// ─── Main function ────────────────────────────────────────────────────────────
+
 /**
  * Get Annual Financial Report
- * 
- * @param userId - User ID
- * @param year - Year to report on
- * @param fromMonth - Start month (1-12), default 1 (January)
- * @param toMonth - End month (1-12), default 12 (December)
- * @returns Normalized annual report DTO
- * 
- * PERFORMANCE:
- * - Queries only aggregated tables (fast)
- * - Single database round-trip per entity type
- * - No client-side heavy computation
- */
-/**
- * cache() ensures this function is de-duplicated per request:
- * if called multiple times with the same args in a single server render,
- * the DB is only queried once — no redundant fetches.
+ *
+ * SECURITY: userId must be validated from server session before calling.
+ * This function is not exported as an API route — server-only.
+ *
+ * cache() deduplicates calls within a single server render cycle.
  */
 export const getAnnualReport = cache(async function getAnnualReport(
   userId: string,
   year: number,
   fromMonth: number = 1,
-  toMonth: number = 12
+  toMonth: number = 12,
 ): Promise<AnnualReportDTO> {
-  // Validate month range
+  // Clamp and validate month range server-side
   const validFromMonth = Math.max(1, Math.min(12, fromMonth));
-  const validToMonth = Math.max(1, Math.min(12, toMonth));
+  const validToMonth = Math.max(validFromMonth, Math.min(12, toMonth));
 
-  // AGGREGATION LAYER: Ensure summaries exist before querying
-  // This is the ONLY integration point with the summary engine
+  // Ensure aggregated summaries exist before querying
   await ensureMonthlySummariesForRange(userId, year, validFromMonth, validToMonth);
 
-  // Fetch monthly summaries for the year range
-  const monthlySummaries = await prisma.monthlySummary.findMany({
-    where: {
-      userId,
-      year,
-      month: {
-        gte: validFromMonth,
-        lte: validToMonth,
-      },
-    },
-    orderBy: {
-      month: "asc",
-    },
-  });
+  // ── Single-pass DB fetch for monthly summaries ────────────────────────────
+  const [monthlySummaries, categorySummaries] = await Promise.all([
+    prisma.monthlySummary.findMany({
+      where: { userId, year, month: { gte: validFromMonth, lte: validToMonth } },
+      orderBy: { month: "asc" },
+      // Select only fields the DTO needs — no unnecessary data transfer
+      select: { month: true, income: true, expense: true, net: true },
+    }),
 
-  // Fetch category summaries for the year range
-  const categorySummaries = await prisma.monthlyCategorySummary.findMany({
-    where: {
-      userId,
-      year,
-      month: {
-        gte: validFromMonth,
-        lte: validToMonth,
+    prisma.monthlyCategorySummary.findMany({
+      where: {
+        userId,
+        year,
+        month: { gte: validFromMonth, lte: validToMonth },
+        // No type filter — we need both INCOME and EXPENSE for the browser
       },
-      type: "EXPENSE", // Only expense categories for breakdown
-    },
-    include: {
-      category: {
-        select: {
-          name: true,
-        },
+      include: {
+        category: { select: { name: true } },
       },
-    },
-  });
+      orderBy: [{ month: "asc" }, { amount: "desc" }],
+    }),
+  ]);
 
-  // Calculate totals
+  // ── Totals ────────────────────────────────────────────────────────────────
   let totalIncome = 0;
   let totalExpense = 0;
   let totalNet = 0;
 
-  monthlySummaries.forEach((summary) => {
-    totalIncome += summary.income;
-    totalExpense += summary.expense;
-    totalNet += summary.net;
+  monthlySummaries.forEach((s) => {
+    totalIncome += s.income;
+    totalExpense += s.expense;
+    totalNet += s.net;
   });
 
-  // Calculate income-based percentages
-  // CRITICAL: Income is the 100% baseline
   const expenseRate = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
   const savingRate = totalIncome > 0 ? (totalNet / totalIncome) * 100 : 0;
+  const monthsCount = monthlySummaries.length;
 
-  // Build monthly trend
-  const monthlyTrend = monthlySummaries.map((summary) => ({
-    month: summary.month,
-    monthName: MONTH_NAMES[summary.month - 1],
-    income: summary.income,
-    expense: summary.expense,
-    net: summary.net,
+  // ── Monthly trend ─────────────────────────────────────────────────────────
+  const monthlyTrend = monthlySummaries.map((s) => ({
+    month: s.month,
+    monthName: MONTH_NAMES[s.month - 1],
+    income: s.income,
+    expense: s.expense,
+    net: s.net,
   }));
 
-  // Aggregate categories across all months
-  const categoryMap = new Map<string, { name: string; amount: number }>();
-  
-  categorySummaries.forEach((catSummary) => {
-    const existing = categoryMap.get(catSummary.categoryId);
-    if (existing) {
-      existing.amount += catSummary.amount;
-    } else {
-      categoryMap.set(catSummary.categoryId, {
-        name: catSummary.category.name,
-        amount: catSummary.amount,
-      });
-    }
-  });
+  // ── Annual top categories (EXPENSE only) ──────────────────────────────────
+  const expenseCategoryMap = new Map<string, { name: string; amount: number }>();
+  categorySummaries
+    .filter((c) => c.type === "EXPENSE")
+    .forEach((c) => {
+      const existing = expenseCategoryMap.get(c.categoryId);
+      if (existing) {
+        existing.amount += c.amount;
+      } else {
+        expenseCategoryMap.set(c.categoryId, { name: c.category.name, amount: c.amount });
+      }
+    });
 
-  // Convert to array and sort by amount (descending)
-  const sortedCategories = Array.from(categoryMap.entries())
+  const topCategories = Array.from(expenseCategoryMap.entries())
     .map(([categoryId, { name, amount }]) => ({
       categoryId,
       categoryName: name,
       amount,
-      // Percentage relative to TOTAL EXPENSE (not income)
       percentageOfExpense: totalExpense > 0 ? (amount / totalExpense) * 100 : 0,
     }))
-    .sort((a, b) => b.amount - a.amount);
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
 
-  // Take top 5 categories
-  const topCategories = sortedCategories.slice(0, 5);
+  // ── Monthly category breakdown ────────────────────────────────────────────
+  // Group categories by month, compute per-type totals for percentage
+  const monthCatMap = new Map<number, { income: MonthCategoryEntry[]; expense: MonthCategoryEntry[] }>();
 
-  // Generate insights
+  // Initialize for every month in range (even empty ones)
+  for (let m = validFromMonth; m <= validToMonth; m++) {
+    monthCatMap.set(m, { income: [], expense: [] });
+  }
+
+  // Group into typed buckets per month
+  const rawByMonth = new Map<number, Map<string, { name: string; amount: number; type: string }>>();
+  categorySummaries.forEach((c) => {
+    if (!rawByMonth.has(c.month)) rawByMonth.set(c.month, new Map());
+    const key = `${c.categoryId}-${c.type}`;
+    const bucket = rawByMonth.get(c.month)!;
+    const existing = bucket.get(key);
+    if (existing) {
+      existing.amount += c.amount;
+    } else {
+      bucket.set(key, { name: c.category.name, amount: c.amount, type: c.type });
+    }
+  });
+
+  // Build structured breakdown with percentages
+  const monthlyCategoryBreakdown: MonthCategoryBreakdown[] = [];
+
+  for (let m = validFromMonth; m <= validToMonth; m++) {
+    const monthSummary = monthlySummaries.find((s) => s.month === m);
+    const monthIncome = monthSummary?.income ?? 0;
+    const monthExpense = monthSummary?.expense ?? 0;
+
+    const rawEntries = rawByMonth.get(m) ?? new Map();
+    const categories: MonthCategoryEntry[] = Array.from(rawEntries.entries()).map(([key, v]) => {
+      const isIncome = v.type === "INCOME";
+      const monthTotal = isIncome ? monthIncome : monthExpense;
+      return {
+        // Extract categoryId from composite key safely
+        categoryId: key.replace(`-${v.type}`, ""),
+        categoryName: v.name,
+        amount: v.amount,
+        type: v.type as "INCOME" | "EXPENSE",
+        percentage: monthTotal > 0 ? (v.amount / monthTotal) * 100 : 0,
+      };
+    }).sort((a, b) => b.amount - a.amount);
+
+    monthlyCategoryBreakdown.push({
+      month: m,
+      monthName: MONTH_NAMES[m - 1],
+      totalIncome: monthIncome,
+      totalExpense: monthExpense,
+      categories,
+    });
+  }
+
+  // ── Insights ──────────────────────────────────────────────────────────────
   let highestExpenseMonth: number | null = null;
   let lowestSavingMonth: number | null = null;
-  let maxExpense = 0;
+  let maxExpense = -Infinity;
   let minSaving = Infinity;
 
-  monthlySummaries.forEach((summary) => {
-    if (summary.expense > maxExpense) {
-      maxExpense = summary.expense;
-      highestExpenseMonth = summary.month;
+  let bestSavingMonth: AnnualRatios["bestSavingMonth"] = null;
+  let worstSpendingMonth: AnnualRatios["worstSpendingMonth"] = null;
+  let maxNet = -Infinity;
+  let deficitMonthsCount = 0;
+
+  monthlySummaries.forEach((s) => {
+    if (s.expense > maxExpense) {
+      maxExpense = s.expense;
+      highestExpenseMonth = s.month;
+      worstSpendingMonth = { month: s.month, monthName: MONTH_NAMES[s.month - 1], expense: s.expense };
     }
-    if (summary.net < minSaving) {
-      minSaving = summary.net;
-      lowestSavingMonth = summary.month;
+    if (s.net < minSaving) {
+      minSaving = s.net;
+      lowestSavingMonth = s.month;
     }
+    if (s.net > maxNet) {
+      maxNet = s.net;
+      bestSavingMonth = { month: s.month, monthName: MONTH_NAMES[s.month - 1], net: s.net };
+    }
+    if (s.net < 0) deficitMonthsCount++;
   });
 
   const expenseValues = monthlySummaries.map((s) => s.expense);
   const expenseVolatility = calculateVolatility(expenseValues);
 
+  const avgMonthlyIncome = monthsCount > 0 ? totalIncome / monthsCount : 0;
+  const avgMonthlyExpense = monthsCount > 0 ? totalExpense / monthsCount : 0;
+  const monthsOfSurplus = totalNet > 0 && avgMonthlyExpense > 0
+    ? totalNet / avgMonthlyExpense
+    : null;
+
+  const ratios: AnnualRatios = {
+    savingsRate: savingRate,
+    expenseRatio: expenseRate,
+    avgMonthlyIncome,
+    avgMonthlyExpense,
+    monthsOfSurplus,
+    deficitMonthsCount,
+    bestSavingMonth,
+    worstSpendingMonth,
+    consistencyScore: volatilityToConsistency(expenseVolatility),
+  };
+
   return {
     year,
-    range: {
-      fromMonth: validFromMonth,
-      toMonth: validToMonth,
-    },
-    totals: {
-      income: totalIncome,
-      expense: totalExpense,
-      net: totalNet,
-      expenseRate,
-      savingRate,
-    },
+    range: { fromMonth: validFromMonth, toMonth: validToMonth },
+    totals: { income: totalIncome, expense: totalExpense, net: totalNet, expenseRate, savingRate },
     monthlyTrend,
     topCategories,
-    insights: {
-      highestExpenseMonth,
-      lowestSavingMonth,
-      expenseVolatility,
-    },
+    monthlyCategoryBreakdown,
+    ratios,
+    insights: { highestExpenseMonth, lowestSavingMonth, expenseVolatility },
   };
 });

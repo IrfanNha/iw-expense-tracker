@@ -58,16 +58,16 @@ export const PERCENTAGE_MODE_LABELS = {
  * Detailed descriptions explaining what each mode shows
  */
 export const PERCENTAGE_MODE_DESCRIPTIONS = {
-  [PercentageMode.INCOME_BASED]: 'Menghitung persentase berdasarkan income sebagai 100%',
-  [PercentageMode.CASH_FLOW_PROPORTION]: 'Menunjukkan proporsi arus kas, bukan rasio terhadap income',
+  [PercentageMode.INCOME_BASED]: 'Expense & savings as % of total income',
+  [PercentageMode.CASH_FLOW_PROPORTION]: 'Visual proportion of cash flow, not a health metric',
 } as const;
 
 /**
  * Helper text to display in the chart based on active mode
  */
 export const PERCENTAGE_MODE_HELPER_TEXT = {
-  [PercentageMode.INCOME_BASED]: 'Persentase relatif terhadap income',
-  [PercentageMode.CASH_FLOW_PROPORTION]: 'Menunjukkan proporsi arus kas, bukan rasio terhadap income',
+  [PercentageMode.INCOME_BASED]: 'Relative to income',
+  [PercentageMode.CASH_FLOW_PROPORTION]: 'Proportion only — not a savings metric',
 } as const;
 
 /**

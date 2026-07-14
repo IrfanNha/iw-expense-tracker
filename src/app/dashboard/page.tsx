@@ -116,6 +116,7 @@ export default function DashboardPage() {
             searchedTransactions={derived.searchedTransactions}
             groupedTransactions={derived.groupedTransactions}
             isLoading={transactionsLoading}
+            periodTotals={derived.periodTotals}
             period={filters.period}
             onPeriodChange={filters.setPeriod}
             selectedDate={filters.selectedDate}

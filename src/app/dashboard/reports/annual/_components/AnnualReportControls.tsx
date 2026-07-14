@@ -113,7 +113,7 @@ export function AnnualReportControls({
             Annual Financial Report
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-            Ringkasan kesehatan keuangan tahunan
+            Your annual financial health summary
           </p>
         </div>
 
