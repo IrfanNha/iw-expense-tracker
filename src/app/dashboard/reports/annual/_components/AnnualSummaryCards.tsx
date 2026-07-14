@@ -1,12 +1,11 @@
 /**
  * AnnualSummaryCards — Server Component
  *
- * Menampilkan 4 kartu ringkasan finansial (Income, Expense, Net, Health).
- * Karena konten ini STATIS (tidak ada interaksi), ini berjalan di server
- * dan tidak mengirim JS ke klien — mengurangi TBT secara langsung.
+ * Single-card executive summary. Professional, mature layout consistent
+ * with AnnualRatiosSection and AnnualInsightsPanel.
+ * Zero JS shipped to the client.
  */
 
-import { TrendingUp, TrendingDown, ArrowDownToLine, ArrowUpFromLine, Activity } from "lucide-react";
 import { formatCurrency } from "@/lib/money";
 import type { AnnualReportDTO } from "@/lib/report/annual-report";
 import { cn } from "@/lib/utils";
@@ -18,143 +17,120 @@ interface Props {
 
 export function AnnualSummaryCards({ totals, monthsCount }: Props) {
   const isDeficit = totals.expense > totals.income;
-
-  const avgIncome = monthsCount > 0 ? totals.income / monthsCount : 0;
+  const avgIncome  = monthsCount > 0 ? totals.income  / monthsCount : 0;
   const avgExpense = monthsCount > 0 ? totals.expense / monthsCount : 0;
 
   return (
-    <div className="grid gap-3 md:gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {/* Income Card */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 transition-colors hover:bg-accent/20">
-        <div className="flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10">
-                <ArrowDownToLine className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70">
-                Total Income
-              </p>
-            </div>
-          </div>
-          <div>
-            <p className="text-xl md:text-2xl font-bold tabular-nums text-foreground">
-              {formatCurrency(totals.income)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Avg: <span className="font-medium text-foreground">{formatCurrency(avgIncome)}</span> / mo
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="rounded-xl border border-border/60 bg-card p-4 md:p-6">
 
-      {/* Expense Card */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 transition-colors hover:bg-accent/20">
-        <div className="flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/10">
-                <ArrowUpFromLine className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70">
-                Total Expense
-              </p>
-            </div>
-          </div>
-          <div>
-            <p className="text-xl md:text-2xl font-bold tabular-nums text-rose-600 dark:text-rose-400">
+      {/* ── Three key metrics ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3">
+
+        {/* Income */}
+        <div className="pb-5 sm:pb-0 sm:pr-6 border-b sm:border-b-0 sm:border-r border-border/40">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">
+            Total Income
+          </p>
+          <p className="text-2xl md:text-3xl font-bold tabular-nums text-foreground leading-none">
+            {formatCurrency(totals.income)}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Avg{" "}
+            <span className="font-medium text-foreground tabular-nums">
+              {formatCurrency(avgIncome)}
+            </span>{" "}
+            / mo
+          </p>
+        </div>
+
+        {/* Expense */}
+        <div className="py-5 sm:py-0 sm:px-6 border-b sm:border-b-0 sm:border-r border-border/40">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">
+            Total Expense
+          </p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-2xl md:text-3xl font-bold tabular-nums text-rose-500 leading-none">
               {formatCurrency(totals.expense)}
             </p>
-            <div className="flex items-center justify-between mt-1">
-              <p className="text-xs text-muted-foreground">
-                Avg: <span className="font-medium text-foreground">{formatCurrency(avgExpense)}</span> / mo
-              </p>
-              <span className="text-xs font-medium text-rose-600 dark:text-rose-400">{totals.expenseRate.toFixed(1)}%</span>
-            </div>
+            <span className="text-xs font-semibold text-rose-500 tabular-nums">
+              {totals.expenseRate.toFixed(1)}%
+            </span>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Avg{" "}
+            <span className="font-medium text-foreground tabular-nums">
+              {formatCurrency(avgExpense)}
+            </span>{" "}
+            / mo
+          </p>
         </div>
-      </div>
 
-      {/* Net/Savings Card */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 transition-colors hover:bg-accent/20">
-        <div className="flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={cn(
-                "flex h-6 w-6 items-center justify-center rounded-full",
-                isDeficit ? "bg-rose-500/10" : "bg-emerald-500/10"
-              )}>
-                {isDeficit ? (
-                  <TrendingDown className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-                ) : (
-                  <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                )}
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70">
-                Net / Savings
-              </p>
-            </div>
-          </div>
-          <div>
+        {/* Net / Savings */}
+        <div className="pt-5 sm:pt-0 sm:pl-6">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">
+            Net / Savings
+          </p>
+          <div className="flex items-baseline gap-2">
             <p className={cn(
-              "text-xl md:text-2xl font-bold tabular-nums",
-              isDeficit ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+              "text-2xl md:text-3xl font-bold tabular-nums leading-none",
+              isDeficit ? "text-rose-500" : "text-emerald-500",
             )}>
               {formatCurrency(totals.net)}
             </p>
-            <div className="flex items-center justify-between mt-1">
-              <p className="text-xs text-muted-foreground">
-                Of total income
-              </p>
-              <span className={cn(
-                "text-xs font-medium",
-                isDeficit ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
-              )}>
-                {Math.abs(totals.savingRate).toFixed(1)}%
-              </span>
-            </div>
+            <span className={cn(
+              "text-xs font-semibold tabular-nums",
+              isDeficit ? "text-rose-500" : "text-emerald-500",
+            )}>
+              {Math.abs(totals.savingRate).toFixed(1)}%
+            </span>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">of total income</p>
         </div>
       </div>
 
-      {/* Financial Health Card */}
-      <div className={cn(
-        "rounded-xl border p-4 transition-colors hover:bg-accent/20",
-        isDeficit ? "border-rose-500/30 bg-rose-500/5" : "border-border/60 bg-card"
-      )}>
-        <div className="flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/10">
-                <Activity className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70">
-                Health Status
-              </p>
-            </div>
-          </div>
-          <div>
-            <p className={cn(
-              "text-xl md:text-2xl font-bold uppercase tracking-tight",
-              isDeficit ? "text-rose-600 dark:text-rose-400" : "text-foreground"
+      {/* ── Health Status bar ─────────────────────────────────────────────── */}
+      <div className="mt-5 pt-5 border-t border-border/40">
+        {/* Label row */}
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "text-xs font-bold uppercase tracking-widest",
+              isDeficit ? "text-rose-500" : "text-foreground",
             )}>
               {isDeficit ? "Deficit" : "Surplus"}
-            </p>
-            
-            {/* Health Bar */}
-            <div className="mt-2.5 h-1.5 w-full bg-muted rounded-full overflow-hidden flex">
-              <div 
-                className="bg-rose-500 h-full" 
-                style={{ width: `${Math.min(totals.expenseRate, 100)}%` }} 
-              />
-              {!isDeficit && (
-                <div 
-                  className="bg-emerald-500 h-full" 
-                  style={{ width: `${Math.min(totals.savingRate, 100)}%` }} 
-                />
-              )}
-            </div>
+            </span>
+            <span className="text-[10px] text-muted-foreground/60 font-medium">
+              Health Status
+            </span>
           </div>
+
+          {/* Legend — right-aligned */}
+          <div className="flex items-center gap-3 sm:gap-4 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-500" />
+              Expense {totals.expenseRate.toFixed(1)}%
+            </span>
+            {!isDeficit && (
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Savings {totals.savingRate.toFixed(1)}%
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Bar */}
+        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden flex">
+          <div
+            className="bg-rose-500 h-full transition-all duration-500"
+            style={{ width: `${Math.min(totals.expenseRate, 100)}%` }}
+          />
+          {!isDeficit && (
+            <div
+              className="bg-emerald-500 h-full transition-all duration-500"
+              style={{ width: `${Math.min(totals.savingRate, 100)}%` }}
+            />
+          )}
         </div>
       </div>
     </div>

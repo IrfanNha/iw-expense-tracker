@@ -7,13 +7,13 @@
  * tab filters, and the rendered list (grouped or individual).
  */
 import * as React from "react";
-import { Search, X, Receipt } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, X, Receipt, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingDown, TrendingUp } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/money";
 import { SortDropdown } from "./SortDropdown";
 import { PeriodSelector } from "./PeriodSelector";
 import { DateNavigator } from "./DateNavigator";
@@ -21,7 +21,7 @@ import { GroupedTransactionItem } from "./GroupedTransactionItem";
 import { TransactionItem } from "./TransactionItem";
 import type { Period, ActiveTab, SortOrder } from "@/types/dashboard";
 import type { Transaction } from "@/hooks/useTransactions";
-import type { GroupedCategory } from "@/hooks/usePeriodTransactions";
+import type { GroupedCategory, PeriodTotals } from "@/hooks/usePeriodTransactions";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -76,6 +76,80 @@ function SearchEmpty({ query }: { query: string }) {
   );
 }
 
+// ─── Day Summary Pill ─────────────────────────────────────────────────────────
+
+interface DaySummaryPillProps {
+  income: number;
+  expense: number;
+  isLoading: boolean;
+}
+
+function DaySummaryPill({ income, expense, isLoading }: DaySummaryPillProps) {
+  const net = income - expense;
+  const isEmpty = income === 0 && expense === 0;
+
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-2 animate-pulse">
+        <div className="flex items-center justify-center gap-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-3.5 w-16 rounded bg-muted" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isEmpty) {
+    return (
+      <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-2 flex items-center justify-center gap-1.5">
+        <Receipt className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+        <span className="text-[10px] text-muted-foreground/50">No transactions today</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-2">
+      <div className="flex items-center justify-center gap-4 sm:gap-6">
+        {/* Income */}
+        <div className="flex items-center gap-1.5">
+          <TrendingUp className="h-3 w-3 text-green-500 shrink-0" />
+          <span className="text-xs font-semibold text-green-500 tabular-nums">
+            {formatCurrency(income)}
+          </span>
+        </div>
+
+        <div className="h-3.5 w-px bg-border/60" />
+
+        {/* Expense */}
+        <div className="flex items-center gap-1.5">
+          <TrendingDown className="h-3 w-3 text-red-500 shrink-0" />
+          <span className="text-xs font-semibold text-red-500 tabular-nums">
+            {formatCurrency(expense)}
+          </span>
+        </div>
+
+        <div className="h-3.5 w-px bg-border/60" />
+
+        {/* Net */}
+        <div className="flex items-center gap-1.5">
+          <Minus className="h-3 w-3 text-muted-foreground shrink-0" />
+          <span
+            className={cn(
+              "text-xs font-semibold tabular-nums",
+              net >= 0 ? "text-green-500" : "text-red-500"
+            )}
+          >
+            {net >= 0 ? "+" : ""}{formatCurrency(net)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface TransactionListProps {
@@ -84,6 +158,7 @@ interface TransactionListProps {
   searchedTransactions: Transaction[];
   groupedTransactions: [string, GroupedCategory][];
   isLoading: boolean;
+  periodTotals: PeriodTotals;
 
   // Filters
   period: Period;
@@ -123,6 +198,7 @@ export const TransactionList = React.memo(function TransactionList({
   searchedTransactions,
   groupedTransactions,
   isLoading,
+  periodTotals,
   period,
   onPeriodChange,
   selectedDate,
@@ -226,7 +302,16 @@ export const TransactionList = React.memo(function TransactionList({
           onNavigate={onNavigate}
         />
 
-        {/* Row 5: Tabs */}
+        {/* Row 5: Day Summary Pill — only visible on "day" period */}
+        {period === "day" && (
+          <DaySummaryPill
+            income={periodTotals.income}
+            expense={periodTotals.expense}
+            isLoading={isLoading}
+          />
+        )}
+
+        {/* Row 6: Tabs */}
         <Tabs
           value={activeTab}
           onValueChange={(v) => onTabChange(v as ActiveTab)}
