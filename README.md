@@ -1,5 +1,7 @@
 # IW Expense Tracker
 
+![IW Expense Tracker Preview](https://ibb.co.com/GvQ3CD7g)
+
 A modern, full-featured expense tracking application built with Next.js, featuring secure authentication, multi-account management, transaction tracking, and comprehensive financial reporting.
 
 ## 🚀 Features
